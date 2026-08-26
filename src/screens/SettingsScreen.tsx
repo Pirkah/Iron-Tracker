@@ -16,37 +16,54 @@ import { StorageService } from '../services/storage';
 import {
   Download,
   Upload,
-  RefreshCw,
-  Info,
   ShieldCheck,
   ChevronRight,
-  Database,
 } from 'lucide-react-native';
+import { GlassButton } from '../components/common/GlassButton';
 
 export const SettingsScreen: React.FC = () => {
+  const { history, workoutTemplates, templateOrder, exerciseCatalog, hiddenExercises, muscleGroups, loadAllData } = useGym();
   const [showImportModal, setShowImportModal] = useState(false);
   const [importJsonText, setImportJsonText] = useState('');
 
   const handleExportData = async () => {
     try {
-      const dataStr = await StorageService.exportAllData();
+      const data = {
+        version: 1,
+        exportDate: new Date().toISOString(),
+        history,
+        workoutTemplates,
+        templateOrder,
+        exerciseCatalog,
+        hiddenExercises,
+        muscleGroups,
+      };
+
+      const jsonString = JSON.stringify(data, null, 2);
       await Share.share({
-        message: dataStr,
-        title: 'Sauvegarde Iron Tracker (JSON)',
+        message: jsonString,
+        title: 'Iron Tracker - Sauvegarde complète',
       });
-    } catch (e) {
-      Alert.alert('Erreur', 'Impossible d\'exporter les données.');
+    } catch {
+      Alert.alert('Erreur', "Impossible d'exporter les données.");
     }
   };
 
   const handleImportData = async () => {
-    if (!importJsonText.trim()) return;
     try {
-      const success = await StorageService.importData(importJsonText.trim());
-      if (success) {
-        Alert.alert('Succès', 'Données restaurées avec succès ! Redémarre l\'application pour actualiser.');
+      const parsed = JSON.parse(importJsonText.trim());
+      if (parsed && parsed.history && parsed.workoutTemplates) {
+        await StorageService.saveHistory(parsed.history);
+        await StorageService.saveTemplates(parsed.workoutTemplates);
+        if (parsed.templateOrder) await StorageService.saveTemplateOrder(parsed.templateOrder);
+        if (parsed.exerciseCatalog) await StorageService.saveCatalog(parsed.exerciseCatalog);
+        if (parsed.hiddenExercises) await StorageService.saveHiddenExercises(parsed.hiddenExercises);
+        if (parsed.muscleGroups) await StorageService.saveMuscleGroups(parsed.muscleGroups);
+
+        await loadAllData();
         setShowImportModal(false);
         setImportJsonText('');
+        Alert.alert('Succès', 'Toutes les données ont été restaurées !');
       } else {
         Alert.alert('Erreur', 'Format JSON invalide.');
       }
@@ -61,7 +78,8 @@ export const SettingsScreen: React.FC = () => {
         {/* Section: Sauvegarde & Données */}
         <Text style={styles.sectionTitle}>DONNÉES & SAUVEGARDE</Text>
 
-        <TouchableOpacity style={styles.menuRow} onPress={handleExportData} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.menuGlassRow} onPress={handleExportData} activeOpacity={0.7}>
+          <View style={styles.glassReflectionTop} />
           <View style={styles.menuRowLeft}>
             <Download color={Colors.neonGreen} size={20} />
             <View>
@@ -73,10 +91,11 @@ export const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.menuRow}
+          style={styles.menuGlassRow}
           onPress={() => setShowImportModal(true)}
           activeOpacity={0.7}
         >
+          <View style={styles.glassReflectionTop} />
           <View style={styles.menuRowLeft}>
             <Upload color={Colors.blueAccent} size={20} />
             <View>
@@ -90,12 +109,13 @@ export const SettingsScreen: React.FC = () => {
         {/* Section: À Propos */}
         <Text style={[styles.sectionTitle, { marginTop: Spacing.lg }]}>À PROPOS</Text>
 
-        <View style={styles.infoCard}>
+        <View style={styles.infoGlassCard}>
+          <View style={styles.glassReflectionTop} />
           <View style={styles.brandRow}>
             <ShieldCheck color={Colors.neonGreen} size={24} />
             <Text style={styles.brandText}>IRON TRACKER</Text>
           </View>
-          <Text style={styles.versionText}>Version 1.0.0 (Cross-Platform iOS & Android)</Text>
+          <Text style={styles.versionText}>Version 1.0.0 (Design Liquid Glass Edition)</Text>
           <Text style={styles.descText}>
             Application moderne conçue pour suivre précisément ses charges, ses répétitions, ses temps de repos et sa progression à la salle de musculation.
           </Text>
@@ -105,7 +125,8 @@ export const SettingsScreen: React.FC = () => {
       {/* Import Modal */}
       <Modal visible={showImportModal} transparent={true} animationType="fade">
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+          <View style={styles.modalGlassCard}>
+            <View style={styles.glassReflectionTop} />
             <Text style={styles.modalTitle}>Restaurer des données</Text>
             <Text style={styles.modalSubNote}>Colle ici le texte JSON de ta sauvegarde :</Text>
             <TextInput
@@ -118,15 +139,18 @@ export const SettingsScreen: React.FC = () => {
               numberOfLines={8}
             />
             <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
+              <GlassButton
+                title="Annuler"
+                variant="glass"
                 onPress={() => setShowImportModal(false)}
-              >
-                <Text style={styles.modalCancelText}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleImportData}>
-                <Text style={styles.modalConfirmText}>Importer</Text>
-              </TouchableOpacity>
+                style={{ flex: 1 }}
+              />
+              <GlassButton
+                title="Importer"
+                variant="neon"
+                onPress={handleImportData}
+                style={{ flex: 1 }}
+              />
             </View>
           </View>
         </View>
@@ -142,25 +166,34 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Spacing.lg,
-    gap: Spacing.sm,
-    paddingBottom: 100,
+    gap: Spacing.md,
+    paddingBottom: 110,
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: '900',
     color: Colors.textSecondary,
-    letterSpacing: 1,
-    marginBottom: Spacing.xs,
+    letterSpacing: 1.2,
+    marginTop: Spacing.sm,
   },
-  menuRow: {
+  menuGlassRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    backgroundColor: Colors.glassCard,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    overflow: 'hidden',
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    height: 1.5,
+    backgroundColor: Colors.glassBorderTop,
   },
   menuRowLeft: {
     flexDirection: 'row',
@@ -168,46 +201,45 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   menuRowTitle: {
-    color: Colors.textPrimary,
     fontSize: 15,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   menuRowSub: {
-    color: Colors.textMuted,
     fontSize: 12,
+    color: Colors.textMuted,
     marginTop: 2,
   },
-  infoCard: {
-    backgroundColor: Colors.card,
+  infoGlassCard: {
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    alignItems: 'center',
-    gap: Spacing.sm,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    overflow: 'hidden',
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   brandText: {
-    color: Colors.textPrimary,
     fontSize: 18,
     fontWeight: '900',
+    color: Colors.textPrimary,
     letterSpacing: 1,
   },
   versionText: {
-    color: Colors.neonGreen,
     fontSize: 12,
+    color: Colors.neonGreen,
     fontWeight: 'bold',
+    marginBottom: Spacing.md,
   },
   descText: {
-    color: Colors.textSecondary,
     fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginTop: Spacing.xs,
+    color: Colors.textSecondary,
+    lineHeight: 20,
   },
   modalBackdrop: {
     flex: 1,
@@ -216,20 +248,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.lg,
   },
-  modalCard: {
+  modalGlassCard: {
     width: '100%',
-    maxWidth: 400,
-    backgroundColor: Colors.card,
+    maxWidth: 380,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
     color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
+    marginBottom: 4,
   },
   modalSubNote: {
     fontSize: 12,
@@ -244,35 +276,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
+    height: 140,
     textAlignVertical: 'top',
-    height: 160,
-    marginBottom: Spacing.md,
-    fontFamily: 'monospace',
+    marginBottom: Spacing.lg,
   },
   modalActions: {
     flexDirection: 'row',
     gap: Spacing.md,
-  },
-  modalCancelBtn: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    backgroundColor: Colors.cardSecondary,
-    borderRadius: BorderRadius.md,
-  },
-  modalCancelText: {
-    color: Colors.textSecondary,
-    fontWeight: 'bold',
-  },
-  modalConfirmBtn: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    backgroundColor: Colors.neonGreen,
-    borderRadius: BorderRadius.md,
-  },
-  modalConfirmText: {
-    color: Colors.textDark,
-    fontWeight: 'bold',
   },
 });

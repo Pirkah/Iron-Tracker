@@ -7,6 +7,21 @@ export const Colors = {
   cardBorder: '#272732',
   modalOverlay: 'rgba(0, 0, 0, 0.75)',
 
+  // Liquid Glass Design System
+  glassSurface: 'rgba(18, 18, 24, 0.72)',
+  glassTabBar: 'rgba(14, 14, 18, 0.82)',
+  glassCard: 'rgba(24, 24, 32, 0.65)',
+  glassCardHighlight: 'rgba(255, 255, 255, 0.06)',
+  glassBorder: 'rgba(255, 255, 255, 0.14)',
+  glassBorderTop: 'rgba(255, 255, 255, 0.28)',
+  glassNeon: 'rgba(51, 255, 85, 0.18)',
+  glassNeonBorder: 'rgba(51, 255, 85, 0.55)',
+  glassNeonGlow: 'rgba(51, 255, 85, 0.35)',
+  glassPurple: 'rgba(153, 77, 255, 0.22)',
+  glassPurpleBorder: 'rgba(153, 77, 255, 0.55)',
+  glassRed: 'rgba(255, 77, 77, 0.18)',
+  glassRedBorder: 'rgba(255, 77, 77, 0.45)',
+
   // Brand Accents
   neonGreen: '#33FF55',
   neonGreenDark: '#1DB944',
@@ -51,9 +66,9 @@ export const Spacing = {
 };
 
 export const BorderRadius = {
-  sm: 6,
-  md: 10,
-  lg: 14,
-  xl: 18,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 22,
   full: 9999,
 };

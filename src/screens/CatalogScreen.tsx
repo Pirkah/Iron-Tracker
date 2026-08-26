@@ -22,6 +22,7 @@ import {
   X,
   Dumbbell,
 } from 'lucide-react-native';
+import { GlassButton } from '../components/common/GlassButton';
 
 export const CatalogScreen: React.FC = () => {
   const {
@@ -30,57 +31,57 @@ export const CatalogScreen: React.FC = () => {
     getAllUniqueExercises,
     globalRenameExercise,
     globalDeleteExercise,
+    changeMuscleForExercise,
     addMuscleGroup,
     deleteMuscleGroup,
-    changeMuscleForExercise,
     addToCatalog,
   } = useGym();
 
   const [searchText, setSearchText] = useState('');
   const [selectedMuscleDetail, setSelectedMuscleDetail] = useState<string | null>(null);
 
-  // Modals state
+  // Rename modal state
+  const [selectedExoToRename, setSelectedExoToRename] = useState<string | null>(null);
+  const [newExoName, setNewExoName] = useState('');
+  const [showRenameModal, setShowRenameModal] = useState(false);
+
+  // Move modal state
+  const [exoToMove, setExoToMove] = useState<string | null>(null);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+
+  // Add muscle modal state
   const [showNewMuscleModal, setShowNewMuscleModal] = useState(false);
   const [newMuscleName, setNewMuscleName] = useState('');
 
-  const [showRenameModal, setShowRenameModal] = useState(false);
-  const [selectedExoToRename, setSelectedExoToRename] = useState<string | null>(null);
-  const [newExoName, setNewExoName] = useState('');
-
-  const [showMoveModal, setShowMoveModal] = useState(false);
-  const [exoToMove, setExoToMove] = useState<string | null>(null);
-
+  // Add new exercise modal state
   const [showAddExoModal, setShowAddExoModal] = useState(false);
   const [createExoName, setCreateExoName] = useState('');
-  const [createExoMuscle, setCreateExoMuscle] = useState('Pectoraux');
+  const [createExoMuscle, setCreateExoMuscle] = useState('Autre');
 
-  const allUniqueExercises = getAllUniqueExercises();
+  const allUniqueExercises = useMemo(() => {
+    return getAllUniqueExercises();
+  }, [getAllUniqueExercises]);
 
-  // Grouped exercises
-  const groupedExercises = useMemo(() => {
-    const filtered = searchText.trim()
-      ? allUniqueExercises.filter(e => e.toLowerCase().includes(searchText.toLowerCase()))
-      : allUniqueExercises;
+  // Filtered exercises by search
+  const searchResults = useMemo(() => {
+    if (!searchText.trim()) return [];
+    const query = searchText.trim().toLowerCase();
+    return allUniqueExercises.filter(exo => exo.toLowerCase().includes(query));
+  }, [searchText, allUniqueExercises]);
 
-    const dict: Record<string, string[]> = {};
-    if (!searchText.trim()) {
-      muscleGroups.forEach(m => (dict[m] = []));
-    }
-
-    filtered.forEach(exo => {
-      const match = exerciseCatalog.find(
-        c => c.name.trim().toLowerCase() === exo.toLowerCase()
-      );
-      const muscle = match ? match.muscle : 'Autre';
-      if (!dict[muscle]) dict[muscle] = [];
-      dict[muscle].push(exo);
+  // Muscle folder statistics
+  const muscleFoldersWithCounts = useMemo(() => {
+    return muscleGroups.map(m => {
+      const count = allUniqueExercises.filter(exo => {
+        const match = exerciseCatalog.find(
+          c => c.name.trim().toLowerCase() === exo.toLowerCase()
+        );
+        const muscle = match ? match.muscle : 'Autre';
+        return muscle === m;
+      }).length;
+      return { muscle: m, count };
     });
-
-    return Object.entries(dict)
-      .map(([muscle, exos]) => ({ muscle, exos: exos.sort() }))
-      .filter(g => g.exos.length > 0 || !searchText.trim())
-      .sort((a, b) => a.muscle.localeCompare(b.muscle));
-  }, [allUniqueExercises, searchText, muscleGroups, exerciseCatalog]);
+  }, [muscleGroups, allUniqueExercises, exerciseCatalog]);
 
   const handleCreateMuscle = () => {
     const clean = newMuscleName.trim();
@@ -152,56 +153,66 @@ export const CatalogScreen: React.FC = () => {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity
-            style={styles.backBtn}
+            style={styles.backGlassBtn}
             onPress={() => setSelectedMuscleDetail(null)}
           >
             <ChevronRight
               color={Colors.neonGreen}
-              size={28}
+              size={24}
               style={{ transform: [{ rotate: '180deg' }] }}
             />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{selectedMuscleDetail.toUpperCase()}</Text>
+          <TouchableOpacity
+            style={styles.addExoHeaderGlassBtn}
+            onPress={() => {
+              setCreateExoMuscle(selectedMuscleDetail);
+              setShowAddExoModal(true);
+            }}
+          >
+            <Plus color={Colors.neonGreen} size={18} />
+          </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollList}>
           {muscleExos.length === 0 ? (
-            <View style={styles.emptyCard}>
+            <View style={styles.emptyGlassCard}>
               <Text style={styles.emptyText}>Aucun exercice dans ce dossier</Text>
             </View>
           ) : (
             muscleExos.map(exo => (
-              <View key={exo} style={styles.exoDetailRow}>
-                <Text style={styles.exoDetailName} numberOfLines={1}>
+              <View key={exo} style={styles.exoGlassCard}>
+                <View style={styles.glassReflectionTop} />
+                <Text style={styles.exoName} numberOfLines={1}>
                   {exo}
                 </Text>
-                <View style={styles.exoRowActions}>
+                <View style={styles.exoCardActions}>
                   <TouchableOpacity
-                    style={styles.actionIconBtn}
-                    onPress={() => {
-                      setExoToMove(exo);
-                      setShowMoveModal(true);
-                    }}
-                  >
-                    <FolderInput color={Colors.warning} size={18} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.actionIconBtn}
+                    style={styles.actionIconGlassBtn}
                     onPress={() => {
                       setSelectedExoToRename(exo);
                       setNewExoName(exo);
                       setShowRenameModal(true);
                     }}
                   >
-                    <Edit2 color={Colors.blueAccent} size={18} />
+                    <Edit2 color={Colors.textSecondary} size={15} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.actionIconBtn}
+                    style={styles.actionIconGlassBtn}
+                    onPress={() => {
+                      setExoToMove(exo);
+                      setShowMoveModal(true);
+                    }}
+                  >
+                    <FolderInput color={Colors.textSecondary} size={15} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.actionIconGlassBtn}
                     onPress={() => handleGlobalDeletePrompt(exo)}
                   >
-                    <Trash2 color={Colors.danger} size={18} />
+                    <Trash2 color={Colors.danger} size={15} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -221,7 +232,8 @@ export const CatalogScreen: React.FC = () => {
         {/* Rename Modal */}
         <Modal visible={showRenameModal} transparent={true} animationType="fade">
           <View style={styles.modalBackdrop}>
-            <View style={styles.modalCard}>
+            <View style={styles.modalGlassCard}>
+              <View style={styles.glassReflectionTop} />
               <Text style={styles.modalTitle}>Renommer l'exercice</Text>
               <Text style={styles.modalSubNote}>Sera mis à jour partout dans l'application.</Text>
               <TextInput
@@ -231,15 +243,18 @@ export const CatalogScreen: React.FC = () => {
                 autoFocus={true}
               />
               <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={styles.modalCancelBtn}
+                <GlassButton
+                  title="Annuler"
+                  variant="glass"
                   onPress={() => setShowRenameModal(false)}
-                >
-                  <Text style={styles.modalCancelText}>Annuler</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleGlobalRename}>
-                  <Text style={styles.modalConfirmText}>Valider</Text>
-                </TouchableOpacity>
+                  style={{ flex: 1 }}
+                />
+                <GlassButton
+                  title="Valider"
+                  variant="neon"
+                  onPress={handleGlobalRename}
+                  style={{ flex: 1 }}
+                />
               </View>
             </View>
           </View>
@@ -248,13 +263,14 @@ export const CatalogScreen: React.FC = () => {
         {/* Move Exercise Modal */}
         <Modal visible={showMoveModal} transparent={true} animationType="fade">
           <View style={styles.modalBackdrop}>
-            <View style={styles.modalCard}>
+            <View style={styles.modalGlassCard}>
+              <View style={styles.glassReflectionTop} />
               <Text style={styles.modalTitle}>Déplacer vers un dossier</Text>
               <ScrollView style={{ maxHeight: 240, marginVertical: Spacing.sm }}>
                 {muscleGroups.map(m => (
                   <TouchableOpacity
                     key={m}
-                    style={styles.muscleChoiceRow}
+                    style={styles.muscleChoiceGlassRow}
                     onPress={() => handleMoveExercise(m)}
                   >
                     <Text style={styles.muscleChoiceText}>{m}</Text>
@@ -262,12 +278,11 @@ export const CatalogScreen: React.FC = () => {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
+              <GlassButton
+                title="Annuler"
+                variant="glass"
                 onPress={() => setShowMoveModal(false)}
-              >
-                <Text style={styles.modalCancelText}>Annuler</Text>
-              </TouchableOpacity>
+              />
             </View>
           </View>
         </Modal>
@@ -296,137 +311,151 @@ export const CatalogScreen: React.FC = () => {
         </View>
 
         <TouchableOpacity
-          style={styles.addFolderBtn}
+          style={styles.addFolderGlassBtn}
           onPress={() => setShowNewMuscleModal(true)}
         >
-          <FolderPlus color={Colors.neonGreen} size={22} />
+          <FolderPlus color={Colors.neonGreen} size={18} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Quick Add Custom Exercise Button */}
-        <TouchableOpacity
-          style={styles.addExerciseQuickBtn}
-          onPress={() => setShowAddExoModal(true)}
-          activeOpacity={0.8}
-        >
-          <Plus color={Colors.textDark} size={18} style={{ marginRight: 6 }} />
-          <Text style={styles.addExerciseQuickBtnText}>NOUVEL EXERCICE AU CATALOGUE</Text>
-        </TouchableOpacity>
-
-        {/* If search is active, show flat list of matches */}
+      <ScrollView contentContainerStyle={styles.scrollList}>
+        {/* If searching */}
         {searchText.trim().length > 0 ? (
-          <View style={styles.searchResultsList}>
-            {groupedExercises.flatMap(g => g.exos).map(exo => (
-              <View key={exo} style={styles.exoDetailRow}>
-                <Text style={styles.exoDetailName} numberOfLines={1}>
-                  {exo}
-                </Text>
-                <View style={styles.exoRowActions}>
-                  <TouchableOpacity
-                    style={styles.actionIconBtn}
-                    onPress={() => {
-                      setExoToMove(exo);
-                      setShowMoveModal(true);
-                    }}
-                  >
-                    <FolderInput color={Colors.warning} size={18} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.actionIconBtn}
-                    onPress={() => {
-                      setSelectedExoToRename(exo);
-                      setNewExoName(exo);
-                      setShowRenameModal(true);
-                    }}
-                  >
-                    <Edit2 color={Colors.blueAccent} size={18} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.actionIconBtn}
-                    onPress={() => handleGlobalDeletePrompt(exo)}
-                  >
-                    <Trash2 color={Colors.danger} size={18} />
-                  </TouchableOpacity>
-                </View>
+          <View>
+            <Text style={styles.sectionHeaderTitle}>RÉSULTATS ({searchResults.length})</Text>
+            {searchResults.length === 0 ? (
+              <View style={styles.emptyGlassCard}>
+                <Text style={styles.emptyText}>Aucun exercice trouvé</Text>
+                <GlassButton
+                  title="Créer cet exercice"
+                  variant="neon"
+                  onPress={() => {
+                    setCreateExoName(searchText.trim());
+                    setShowAddExoModal(true);
+                  }}
+                  style={{ marginTop: Spacing.md }}
+                />
               </View>
-            ))}
+            ) : (
+              searchResults.map(exo => (
+                <View key={exo} style={styles.exoGlassCard}>
+                  <View style={styles.glassReflectionTop} />
+                  <Text style={styles.exoName} numberOfLines={1}>
+                    {exo}
+                  </Text>
+                  <View style={styles.exoCardActions}>
+                    <TouchableOpacity
+                      style={styles.actionIconGlassBtn}
+                      onPress={() => {
+                        setSelectedExoToRename(exo);
+                        setNewExoName(exo);
+                        setShowRenameModal(true);
+                      }}
+                    >
+                      <Edit2 color={Colors.textSecondary} size={15} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.actionIconGlassBtn}
+                      onPress={() => {
+                        setExoToMove(exo);
+                        setShowMoveModal(true);
+                      }}
+                    >
+                      <FolderInput color={Colors.textSecondary} size={15} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.actionIconGlassBtn}
+                      onPress={() => handleGlobalDeletePrompt(exo)}
+                    >
+                      <Trash2 color={Colors.danger} size={15} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
           </View>
         ) : (
-          /* Muscle Folders List */
-          groupedExercises.map(group => (
-            <TouchableOpacity
-              key={group.muscle}
-              style={styles.muscleFolderCard}
-              onPress={() => setSelectedMuscleDetail(group.muscle)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.muscleFolderLeft}>
-                <Text style={styles.muscleFolderName}>{group.muscle.toUpperCase()}</Text>
-              </View>
-
-              <View style={styles.muscleFolderRight}>
-                <View style={styles.countBadge}>
-                  <Text style={styles.countBadgeText}>{group.exos.length}</Text>
+          /* Normal Muscle Folders List */
+          <View>
+            <Text style={styles.sectionHeaderTitle}>DOSSIERS PAR GROUPE MUSCULAIRE</Text>
+            {muscleFoldersWithCounts.map(folder => (
+              <TouchableOpacity
+                key={folder.muscle}
+                style={styles.muscleFolderGlassCard}
+                onPress={() => setSelectedMuscleDetail(folder.muscle)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.glassReflectionTop} />
+                <View style={styles.muscleFolderLeft}>
+                  <Text style={styles.muscleFolderName}>{folder.muscle.toUpperCase()}</Text>
+                  <Text style={styles.muscleFolderCount}>
+                    {folder.count} exercice{folder.count > 1 ? 's' : ''}
+                  </Text>
                 </View>
 
-                {group.muscle !== 'Autre' && (
-                  <TouchableOpacity
-                    style={styles.deleteFolderBtn}
-                    onPress={e => {
-                      e.stopPropagation();
-                      handleDeleteMusclePrompt(group.muscle);
-                    }}
-                  >
-                    <Trash2 color={Colors.textMuted} size={16} />
-                  </TouchableOpacity>
-                )}
-
-                <ChevronRight color={Colors.neonGreen} size={18} />
-              </View>
-            </TouchableOpacity>
-          ))
+                <View style={styles.muscleFolderRight}>
+                  {folder.muscle !== 'Autre' && (
+                    <TouchableOpacity
+                      style={styles.deleteFolderGlassBtn}
+                      onPress={e => {
+                        e.stopPropagation();
+                        handleDeleteMusclePrompt(folder.muscle);
+                      }}
+                    >
+                      <Trash2 color={Colors.textMuted} size={15} />
+                    </TouchableOpacity>
+                  )}
+                  <ChevronRight color={Colors.neonGreen} size={20} />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
       </ScrollView>
 
       {/* Modals */}
       {renderSharedModals()}
 
-      {/* New Muscle Group Modal */}
+      {/* New Muscle Folder Modal */}
       <Modal visible={showNewMuscleModal} transparent={true} animationType="fade">
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Nouveau Groupe Musculaire</Text>
+          <View style={styles.modalGlassCard}>
+            <View style={styles.glassReflectionTop} />
+            <Text style={styles.modalTitle}>Nouveau dossier muscle</Text>
             <TextInput
               style={styles.modalInput}
-              placeholder="Ex : Avant-bras, Trapèzes, Cardio..."
+              placeholder="Ex: Avant-bras, Trapèzes..."
               placeholderTextColor={Colors.textMuted}
               value={newMuscleName}
               onChangeText={setNewMuscleName}
               autoFocus={true}
             />
             <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
+              <GlassButton
+                title="Annuler"
+                variant="glass"
                 onPress={() => setShowNewMuscleModal(false)}
-              >
-                <Text style={styles.modalCancelText}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleCreateMuscle}>
-                <Text style={styles.modalConfirmText}>Créer</Text>
-              </TouchableOpacity>
+                style={{ flex: 1 }}
+              />
+              <GlassButton
+                title="Créer"
+                variant="neon"
+                onPress={handleCreateMuscle}
+                style={{ flex: 1 }}
+              />
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* Add Custom Exercise to Catalog Modal */}
+      {/* Create New Exercise Modal */}
       <Modal visible={showAddExoModal} transparent={true} animationType="fade">
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Ajouter au Catalogue</Text>
+          <View style={styles.modalGlassCard}>
+            <View style={styles.glassReflectionTop} />
+            <Text style={styles.modalTitle}>Nouvel exercice</Text>
             <TextInput
               style={styles.modalInput}
               placeholder="Nom de l'exercice"
@@ -435,22 +464,21 @@ export const CatalogScreen: React.FC = () => {
               onChangeText={setCreateExoName}
               autoFocus={true}
             />
-
-            <Text style={styles.selectMuscleLabel}>Groupe musculaire :</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.muscleChipsScroll}>
+            <Text style={styles.modalFieldLabel}>Dossier musculaire :</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: Spacing.lg }}>
               {muscleGroups.map(m => (
                 <TouchableOpacity
                   key={m}
                   style={[
-                    styles.muscleChip,
-                    createExoMuscle === m && styles.muscleChipActive,
+                    styles.musclePill,
+                    createExoMuscle === m && styles.musclePillActive,
                   ]}
                   onPress={() => setCreateExoMuscle(m)}
                 >
                   <Text
                     style={[
-                      styles.muscleChipText,
-                      createExoMuscle === m && styles.muscleChipTextActive,
+                      styles.musclePillText,
+                      createExoMuscle === m && styles.musclePillTextActive,
                     ]}
                   >
                     {m}
@@ -458,17 +486,19 @@ export const CatalogScreen: React.FC = () => {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-
             <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
+              <GlassButton
+                title="Annuler"
+                variant="glass"
                 onPress={() => setShowAddExoModal(false)}
-              >
-                <Text style={styles.modalCancelText}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleCreateNewExo}>
-                <Text style={styles.modalConfirmText}>Ajouter</Text>
-              </TouchableOpacity>
+                style={{ flex: 1 }}
+              />
+              <GlassButton
+                title="Créer"
+                variant="neon"
+                onPress={handleCreateNewExo}
+                style={{ flex: 1 }}
+              />
             </View>
           </View>
         </View>
@@ -482,29 +512,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.cardBorder,
-  },
-  backBtn: {
-    padding: Spacing.xs,
-    marginRight: Spacing.sm,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: Colors.textPrimary,
-  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    gap: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.cardBorder,
   },
@@ -512,119 +525,148 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.glassCard,
+    borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    height: 42,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
   },
   searchInput: {
     flex: 1,
     color: Colors.textPrimary,
     fontSize: 14,
-    marginLeft: Spacing.xs,
+    marginLeft: Spacing.sm,
   },
-  addFolderBtn: {
-    padding: Spacing.xs,
-  },
-  scrollContent: {
-    padding: Spacing.lg,
-    gap: Spacing.sm + 2,
-    paddingBottom: 100,
-  },
-  addExerciseQuickBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.neonGreen,
+  addFolderGlassBtn: {
+    width: 42,
+    height: 42,
     borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
-    marginBottom: Spacing.sm,
+    backgroundColor: Colors.glassNeon,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.glassNeonBorder,
   },
-  addExerciseQuickBtnText: {
-    color: Colors.textDark,
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  muscleFolderCard: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.cardBorder,
+  },
+  backGlassBtn: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.md,
+  },
+  addExoHeaderGlassBtn: {
+    padding: 6,
+    backgroundColor: Colors.glassNeon,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassNeonBorder,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: Colors.textPrimary,
+  },
+  scrollList: {
+    padding: Spacing.lg,
+    paddingBottom: 110,
+  },
+  sectionHeaderTitle: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: Colors.textSecondary,
+    letterSpacing: 1.2,
+    marginBottom: Spacing.md,
+  },
+  muscleFolderGlassCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.glassCard,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    marginBottom: Spacing.sm + 2,
+    overflow: 'hidden',
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    height: 1.5,
+    backgroundColor: Colors.glassBorderTop,
   },
   muscleFolderLeft: {
     flex: 1,
   },
   muscleFolderName: {
-    color: Colors.neonGreen,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '900',
+    color: Colors.textPrimary,
+    letterSpacing: 0.5,
+  },
+  muscleFolderCount: {
+    fontSize: 11,
+    color: Colors.neonGreen,
+    fontWeight: 'bold',
+    marginTop: 2,
   },
   muscleFolderRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
-  countBadge: {
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+  deleteFolderGlassBtn: {
+    padding: 6,
   },
-  countBadgeText: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  deleteFolderBtn: {
-    padding: Spacing.xs,
-  },
-  searchResultsList: {
-    gap: Spacing.xs,
-  },
-  exoDetailRow: {
+  exoGlassCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.card,
-    padding: Spacing.md,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    padding: Spacing.md + 2,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    marginBottom: Spacing.sm,
+    overflow: 'hidden',
   },
-  exoDetailName: {
+  exoName: {
+    fontSize: 14,
+    fontWeight: '700',
     color: Colors.textPrimary,
-    fontSize: 15,
-    fontWeight: 'bold',
     flex: 1,
   },
-  exoRowActions: {
+  exoCardActions: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
-  actionIconBtn: {
-    padding: Spacing.xs,
+  actionIconGlassBtn: {
+    padding: 7,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.sm,
   },
-  emptyCard: {
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xxl,
+  emptyGlassCard: {
+    backgroundColor: Colors.glassCard,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
   },
   emptyText: {
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
     fontSize: 14,
+    fontWeight: 'bold',
   },
   modalBackdrop: {
     flex: 1,
@@ -633,25 +675,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.lg,
   },
-  modalCard: {
+  modalGlassCard: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
     color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
+    marginBottom: 4,
   },
   modalSubNote: {
     fontSize: 11,
     color: Colors.textMuted,
     marginBottom: Spacing.md,
+  },
+  modalFieldLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
   },
   modalInput: {
     backgroundColor: Colors.surface,
@@ -663,73 +711,45 @@ const styles = StyleSheet.create({
     borderColor: Colors.cardBorder,
     marginBottom: Spacing.md,
   },
-  selectMuscleLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: Colors.textSecondary,
+  modalActions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  muscleChoiceGlassRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: BorderRadius.md,
     marginBottom: Spacing.xs,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
   },
-  muscleChipsScroll: {
-    marginBottom: Spacing.lg,
+  muscleChoiceText: {
+    color: Colors.textPrimary,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
-  muscleChip: {
-    backgroundColor: Colors.surface,
+  musclePill: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
+    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.full,
     marginRight: Spacing.xs,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
   },
-  muscleChipActive: {
-    backgroundColor: Colors.neonGreenSoft,
+  musclePillActive: {
+    backgroundColor: Colors.glassNeon,
     borderColor: Colors.neonGreen,
   },
-  muscleChipText: {
-    color: Colors.textSecondary,
+  musclePillText: {
     fontSize: 12,
-    fontWeight: 'bold',
-  },
-  muscleChipTextActive: {
-    color: Colors.neonGreen,
-  },
-  muscleChoiceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.cardBorder,
-  },
-  muscleChoiceText: {
-    color: Colors.textPrimary,
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-  },
-  modalCancelBtn: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    backgroundColor: Colors.cardSecondary,
-    borderRadius: BorderRadius.md,
-  },
-  modalCancelText: {
     color: Colors.textSecondary,
     fontWeight: 'bold',
   },
-  modalConfirmBtn: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    backgroundColor: Colors.neonGreen,
-    borderRadius: BorderRadius.md,
-  },
-  modalConfirmText: {
-    color: Colors.textDark,
-    fontWeight: 'bold',
+  musclePillTextActive: {
+    color: Colors.neonGreen,
   },
 });

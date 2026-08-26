@@ -13,6 +13,8 @@ import {
 import { Colors, Spacing, BorderRadius } from '../../theme';
 import { useGym } from '../../context/GymContext';
 import { X, Search, Plus, Sparkles, Layers } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
+import { GlassButton } from '../common/GlassButton';
 
 interface AddExerciseModalProps {
   visible: boolean;
@@ -31,7 +33,7 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
   const [search, setSearch] = useState('');
   const [selectedExo1, setSelectedExo1] = useState<string | null>(null);
 
-  const allExercises = useGym().getAllUniqueExercises();
+  const allExercises = getAllUniqueExercises();
 
   const filteredExercises = useMemo(() => {
     if (!search.trim()) return allExercises;
@@ -73,33 +75,34 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}
       >
-        <View style={styles.content}>
+        <BlurView intensity={Platform.OS === 'ios' ? 85 : 100} tint="dark" style={styles.glassContent}>
+          {/* Specular Highlight */}
+          <View style={styles.glassReflectionTop} />
+
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.titleRow}>
               {isBiset ? (
-                <Layers color={Colors.bisetPurple} size={22} style={{ marginRight: 8 }} />
+                <>
+                  <Layers color={Colors.bisetPurple} size={18} style={{ marginRight: 6 }} />
+                  <Text style={[styles.title, { color: Colors.bisetPurple }]}>
+                    {selectedExo1 ? '2ÈME EXERCICE DU BISET' : '1ER EXERCICE DU BISET'}
+                  </Text>
+                </>
               ) : (
-                <Sparkles color={Colors.neonGreen} size={22} style={{ marginRight: 8 }} />
+                <Text style={styles.title}>AJOUTER UN EXERCICE</Text>
               )}
-              <Text style={[styles.title, isBiset && { color: Colors.bisetPurple }]}>
-                {isBiset
-                  ? selectedExo1
-                    ? 'CHOISIR LE 2ÈME EXERCICE (BISET)'
-                    : 'CHOISIR LE 1ER EXERCICE (BISET)'
-                  : 'AJOUTER UN EXERCICE'}
-              </Text>
             </View>
-            <TouchableOpacity onPress={resetAndClose} style={styles.closeBtn}>
-              <X color={Colors.textSecondary} size={24} />
+            <TouchableOpacity onPress={resetAndClose} style={styles.closeGlassBtn}>
+              <X color={Colors.textSecondary} size={18} />
             </TouchableOpacity>
           </View>
 
-          {/* Biset Step Tag */}
+          {/* Biset Selected 1st Exo indicator */}
           {isBiset && selectedExo1 && (
-            <View style={styles.bisetBanner}>
+            <View style={styles.bisetGlassBanner}>
               <Text style={styles.bisetBannerText}>
-                1er exo : <Text style={{ color: Colors.neonGreen, fontWeight: 'bold' }}>{selectedExo1}</Text>
+                1er exo : <Text style={{ fontWeight: 'bold' }}>{selectedExo1}</Text>
               </Text>
               <TouchableOpacity onPress={() => setSelectedExo1(null)}>
                 <Text style={styles.bisetResetText}>Changer</Text>
@@ -108,15 +111,21 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
           )}
 
           {/* Search Bar */}
-          <View style={styles.searchBar}>
-            <Search color={Colors.textMuted} size={20} />
+          <View style={styles.searchGlassBar}>
+            <Search color={Colors.textMuted} size={18} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Rechercher ou créer un exercice..."
+              placeholder={
+                isBiset
+                  ? selectedExo1
+                    ? 'Rechercher le 2ème exercice...'
+                    : 'Rechercher le 1er exercice...'
+                  : 'Rechercher ou créer un exercice...'
+              }
               placeholderTextColor={Colors.textMuted}
               value={search}
               onChangeText={setSearch}
-              autoCapitalize="words"
+              autoFocus={true}
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch('')}>
@@ -125,23 +134,25 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
             )}
           </View>
 
-          {/* Create New Exercise Button if search doesn't match exactly */}
-          {search.trim().length > 0 &&
-            !allExercises.some(e => e.toLowerCase() === search.trim().toLowerCase()) && (
-              <TouchableOpacity style={styles.createBtn} onPress={handleCreateNew}>
-                <Plus color={Colors.textDark} size={18} />
-                <Text style={styles.createBtnText}>Créer "{search.trim()}"</Text>
-              </TouchableOpacity>
-            )}
+          {/* Create Button (If search query doesn't match exactly) */}
+          {search.trim().length > 0 && !allExercises.some(e => e.toLowerCase() === search.trim().toLowerCase()) && (
+            <GlassButton
+              title={`Créer "${search.trim()}"`}
+              variant="neon"
+              icon={<Sparkles color={Colors.neonGreen} size={16} />}
+              onPress={handleCreateNew}
+              style={{ marginBottom: Spacing.md }}
+            />
+          )}
 
-          {/* Exercise List */}
+          {/* Exercise list */}
           <FlatList
             data={filteredExercises}
             keyExtractor={item => item}
             style={styles.list}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={styles.exerciseItem}
+                style={styles.exerciseGlassItem}
                 onPress={() => handlePickExercise(item)}
                 activeOpacity={0.7}
               >
@@ -150,12 +161,14 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
               </TouchableOpacity>
             )}
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>Aucun exercice trouvé</Text>
-              </View>
+              search.trim().length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>Aucun exercice dans le catalogue</Text>
+                </View>
+              ) : null
             }
           />
-        </View>
+        </BlurView>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -164,18 +177,26 @@ export const AddExerciseModal: React.FC<AddExerciseModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: Colors.modalOverlay,
+    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
   },
-  content: {
-    backgroundColor: Colors.card,
+  glassContent: {
+    backgroundColor: Colors.glassTabBar,
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     padding: Spacing.lg,
-    maxHeight: '85%',
-    minHeight: '60%',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    height: '75%',
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    overflow: 'hidden',
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 20,
+    right: 20,
+    height: 1.5,
+    backgroundColor: Colors.glassBorderTop,
   },
   header: {
     flexDirection: 'row',
@@ -194,19 +215,21 @@ const styles = StyleSheet.create({
     color: Colors.neonGreen,
     letterSpacing: 0.5,
   },
-  closeBtn: {
-    padding: Spacing.xs,
+  closeGlassBtn: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.full,
   },
-  bisetBanner: {
+  bisetGlassBanner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.bisetPurpleSoft,
+    backgroundColor: Colors.glassPurple,
     padding: Spacing.sm + 2,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.bisetPurpleBorder,
+    borderColor: Colors.glassPurpleBorder,
   },
   bisetBannerText: {
     color: Colors.textPrimary,
@@ -217,16 +240,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  searchBar: {
+  searchGlassBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.glassCard,
+    borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm + 2,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
   },
   searchInput: {
     flex: 1,
@@ -234,25 +257,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: Spacing.sm,
   },
-  createBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.neonGreen,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.md,
-    marginBottom: Spacing.md,
-    gap: Spacing.xs,
-  },
-  createBtnText: {
-    color: Colors.textDark,
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
   list: {
     flex: 1,
   },
-  exerciseItem: {
+  exerciseGlassItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

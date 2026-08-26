@@ -24,28 +24,27 @@ export const ExerciseProgressScreen: React.FC<ExerciseProgressScreenProps> = ({
 }) => {
   const { history } = useGym();
 
-  // Find all sessions containing this exercise, sorted chronologically
+  // Extract all sessions containing this exercise
   const sessionsWithExo = useMemo(() => {
     const list: { sessionDate: string; sets: any[]; isUnilateral: boolean }[] = [];
 
-    const sortedSessions = [...history].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
-    sortedSessions.forEach(session => {
-      const found = session.exercises.find(
+    history.forEach(session => {
+      const match = session.exercises.find(
         e => e.name.trim().toLowerCase() === exerciseName.trim().toLowerCase()
       );
-      if (found && found.sets.length > 0) {
+      if (match && match.sets && match.sets.length > 0) {
         list.push({
           sessionDate: session.date,
-          sets: found.sets,
-          isUnilateral: found.isUnilateral,
+          sets: match.sets,
+          isUnilateral: match.isUnilateral,
         });
       }
     });
 
-    return list;
+    // Sort chronologically (oldest to newest)
+    return list.sort(
+      (a, b) => new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime()
+    );
   }, [history, exerciseName]);
 
   // Calculate 1RM chart points
@@ -118,8 +117,8 @@ export const ExerciseProgressScreen: React.FC<ExerciseProgressScreenProps> = ({
     <View style={styles.container}>
       {/* Top Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-          <ChevronLeft color={Colors.neonGreen} size={28} />
+        <TouchableOpacity style={styles.backGlassBtn} onPress={onBack}>
+          <ChevronLeft color={Colors.neonGreen} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {exerciseName}
@@ -127,8 +126,9 @@ export const ExerciseProgressScreen: React.FC<ExerciseProgressScreenProps> = ({
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Estimated 1RM Record Card */}
-        <View style={styles.prCard}>
+        {/* Estimated 1RM Record Glass Card */}
+        <View style={styles.prGlassCard}>
+          <View style={styles.glassReflectionTop} />
           <View style={styles.prHeader}>
             <Trophy color={Colors.neonGreen} size={20} />
             <Text style={styles.prLabel}>RECORD ESTIMÉ (1RM)</Text>
@@ -139,8 +139,9 @@ export const ExerciseProgressScreen: React.FC<ExerciseProgressScreenProps> = ({
           </View>
         </View>
 
-        {/* 1RM Line Chart */}
-        <View style={styles.chartCard}>
+        {/* 1RM Line Chart Glass Card */}
+        <View style={styles.chartGlassCard}>
+          <View style={styles.glassReflectionTop} />
           <View style={styles.chartHeader}>
             <TrendingUp color={Colors.neonGreen} size={18} />
             <Text style={styles.chartTitle}>ÉVOLUTION DE LA FORCE</Text>
@@ -161,7 +162,7 @@ export const ExerciseProgressScreen: React.FC<ExerciseProgressScreenProps> = ({
                   y1={chartHeight - paddingY}
                   x2={chartWidth - paddingX}
                   y2={chartHeight - paddingY}
-                  stroke={Colors.cardBorder}
+                  stroke={Colors.glassBorder}
                   strokeWidth="1"
                 />
                 <Line
@@ -169,7 +170,7 @@ export const ExerciseProgressScreen: React.FC<ExerciseProgressScreenProps> = ({
                   y1={paddingY}
                   x2={chartWidth - paddingX}
                   y2={paddingY}
-                  stroke={Colors.cardBorder}
+                  stroke={Colors.glassBorder}
                   strokeWidth="1"
                   strokeDasharray="4,4"
                 />
@@ -236,7 +237,8 @@ export const ExerciseProgressScreen: React.FC<ExerciseProgressScreenProps> = ({
             <Text style={styles.emptyHistoryText}>Aucune séance enregistrée</Text>
           ) : (
             reversedHistory.map((item, idx) => (
-              <View key={item.sessionDate + idx} style={styles.historyCard}>
+              <View key={item.sessionDate + idx} style={styles.historyGlassCard}>
+                <View style={styles.glassReflectionTop} />
                 <View style={styles.historyCardHeader}>
                   <Calendar color={Colors.neonGreen} size={14} />
                   <Text style={styles.historyDateText}>
@@ -261,7 +263,7 @@ export const ExerciseProgressScreen: React.FC<ExerciseProgressScreenProps> = ({
                     }
 
                     return (
-                      <View key={set.id || sIdx} style={styles.historySetRow}>
+                      <View key={set.id || sIdx} style={styles.historySetGlassRow}>
                         <Text style={styles.historySetIdx}>Set {sIdx + 1}</Text>
                         <Text style={styles.historySetText}>{setText}</Text>
                         {failure && (
@@ -291,14 +293,15 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.background,
     borderBottomWidth: 1,
     borderBottomColor: Colors.cardBorder,
   },
-  backBtn: {
-    padding: Spacing.xs,
+  backGlassBtn: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.md,
     marginRight: Spacing.sm,
   },
   headerTitle: {
@@ -310,14 +313,28 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: Spacing.lg,
     gap: Spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
-  prCard: {
-    backgroundColor: Colors.card,
+  prGlassCard: {
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.neonGreenBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassNeonBorder,
+    shadowColor: Colors.neonGreen,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    height: 1.5,
+    backgroundColor: Colors.glassBorderTop,
   },
   prHeader: {
     flexDirection: 'row',
@@ -346,12 +363,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.neonGreen,
   },
-  chartCard: {
-    backgroundColor: Colors.card,
+  chartGlassCard: {
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    overflow: 'hidden',
   },
   chartHeader: {
     flexDirection: 'row',
@@ -387,22 +405,23 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   historySectionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '900',
     color: Colors.textSecondary,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     marginBottom: Spacing.xs,
   },
   emptyHistoryText: {
     color: Colors.textMuted,
     fontSize: 13,
   },
-  historyCard: {
-    backgroundColor: Colors.card,
+  historyGlassCard: {
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    overflow: 'hidden',
   },
   historyCardHeader: {
     flexDirection: 'row',
@@ -418,16 +437,18 @@ const styles = StyleSheet.create({
   historySetsList: {
     gap: 6,
   },
-  historySetRow: {
+  historySetGlassRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
   },
   historySetIdx: {
-    width: 50,
+    width: 48,
     color: Colors.textMuted,
     fontSize: 12,
     fontWeight: '600',

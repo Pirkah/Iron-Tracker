@@ -5,13 +5,14 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Pressable,
+  Platform,
 } from 'react-native';
 import { Colors, Spacing, BorderRadius } from '../../theme';
 import { useGym } from '../../context/GymContext';
 import { formatSecondsToMMSS } from '../../utils/calculations';
 import { Play, Pause, Square, X, Plus, Minus } from 'lucide-react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { BlurView } from 'expo-blur';
 
 export const RestTimerModal: React.FC = () => {
   const { restTimer, startRestTimer, pauseRestTimer, resumeRestTimer, stopRestTimer, hideRestTimer } = useGym();
@@ -41,12 +42,15 @@ export const RestTimerModal: React.FC = () => {
       onRequestClose={hideRestTimer}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+        <BlurView intensity={Platform.OS === 'ios' ? 85 : 100} tint="dark" style={styles.glassModalContent}>
+          {/* Specular Top Reflection */}
+          <View style={styles.glassReflectionTop} />
+
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>CHRONO DE REPOS</Text>
-            <TouchableOpacity onPress={hideRestTimer} style={styles.closeButton}>
-              <X color={Colors.textSecondary} size={24} />
+            <TouchableOpacity onPress={hideRestTimer} style={styles.closeGlassButton}>
+              <X color={Colors.textSecondary} size={20} />
             </TouchableOpacity>
           </View>
 
@@ -57,7 +61,7 @@ export const RestTimerModal: React.FC = () => {
                 cx={110}
                 cy={110}
                 r={radius}
-                stroke={Colors.cardBorder}
+                stroke={Colors.glassBorder}
                 strokeWidth={strokeWidth}
                 fill="none"
               />
@@ -91,28 +95,28 @@ export const RestTimerModal: React.FC = () => {
           {/* Preset Buttons */}
           <View style={styles.presetsRow}>
             <TouchableOpacity
-              style={styles.presetButton}
+              style={styles.presetGlassButton}
               onPress={() => startRestTimer(30)}
               activeOpacity={0.8}
             >
               <Text style={styles.presetButtonText}>30s</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.presetButton}
+              style={styles.presetGlassButton}
               onPress={() => startRestTimer(60)}
               activeOpacity={0.8}
             >
               <Text style={styles.presetButtonText}>1 min</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.presetButton}
+              style={styles.presetGlassButton}
               onPress={() => startRestTimer(120)}
               activeOpacity={0.8}
             >
               <Text style={styles.presetButtonText}>2 min</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.presetButton}
+              style={styles.presetGlassButton}
               onPress={() => startRestTimer(180)}
               activeOpacity={0.8}
             >
@@ -121,7 +125,7 @@ export const RestTimerModal: React.FC = () => {
           </View>
 
           {/* Custom Time Selector */}
-          <View style={styles.customSection}>
+          <View style={styles.customGlassSection}>
             <Text style={styles.customSectionTitle}>TEMPS PERSONNALISÉ</Text>
             <View style={styles.customPickersRow}>
               {/* Minutes */}
@@ -130,14 +134,14 @@ export const RestTimerModal: React.FC = () => {
                   style={styles.stepperBtn}
                   onPress={() => setCustomMinutes(m => Math.max(0, m - 1))}
                 >
-                  <Minus color={Colors.textPrimary} size={16} />
+                  <Minus color={Colors.textPrimary} size={15} />
                 </TouchableOpacity>
                 <Text style={styles.stepperValue}>{customMinutes} min</Text>
                 <TouchableOpacity
                   style={styles.stepperBtn}
                   onPress={() => setCustomMinutes(m => Math.min(20, m + 1))}
                 >
-                  <Plus color={Colors.textPrimary} size={16} />
+                  <Plus color={Colors.textPrimary} size={15} />
                 </TouchableOpacity>
               </View>
 
@@ -147,24 +151,24 @@ export const RestTimerModal: React.FC = () => {
                   style={styles.stepperBtn}
                   onPress={() => setCustomSeconds(s => (s <= 0 ? 45 : s - 15))}
                 >
-                  <Minus color={Colors.textPrimary} size={16} />
+                  <Minus color={Colors.textPrimary} size={15} />
                 </TouchableOpacity>
                 <Text style={styles.stepperValue}>{customSeconds} s</Text>
                 <TouchableOpacity
                   style={styles.stepperBtn}
                   onPress={() => setCustomSeconds(s => (s >= 45 ? 0 : s + 15))}
                 >
-                  <Plus color={Colors.textPrimary} size={16} />
+                  <Plus color={Colors.textPrimary} size={15} />
                 </TouchableOpacity>
               </View>
 
               {/* Start custom button */}
               <TouchableOpacity
-                style={styles.playCustomBtn}
+                style={styles.playCustomGlassBtn}
                 onPress={handleStartCustom}
                 activeOpacity={0.8}
               >
-                <Play color={Colors.textDark} fill={Colors.textDark} size={20} />
+                <Play color={Colors.neonGreen} fill={Colors.neonGreen} size={18} />
               </TouchableOpacity>
             </View>
           </View>
@@ -174,26 +178,26 @@ export const RestTimerModal: React.FC = () => {
             {(restTimer.isRunning || restTimer.remainingSeconds > 0) && (
               <>
                 <TouchableOpacity
-                  style={[styles.controlCircle, { backgroundColor: Colors.danger }]}
+                  style={[styles.controlCircle, { backgroundColor: Colors.glassRed, borderColor: Colors.glassRedBorder }]}
                   onPress={stopRestTimer}
                 >
-                  <Square color={Colors.textPrimary} fill={Colors.textPrimary} size={20} />
+                  <Square color={Colors.danger} fill={Colors.danger} size={18} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.controlCircle, { backgroundColor: Colors.neonGreen }]}
+                  style={[styles.controlCircle, { backgroundColor: Colors.glassNeon, borderColor: Colors.glassNeonBorder }]}
                   onPress={restTimer.isRunning ? pauseRestTimer : resumeRestTimer}
                 >
                   {restTimer.isRunning ? (
-                    <Pause color={Colors.textDark} fill={Colors.textDark} size={24} />
+                    <Pause color={Colors.neonGreen} fill={Colors.neonGreen} size={22} />
                   ) : (
-                    <Play color={Colors.textDark} fill={Colors.textDark} size={24} />
+                    <Play color={Colors.neonGreen} fill={Colors.neonGreen} size={22} />
                   )}
                 </TouchableOpacity>
               </>
             )}
           </View>
-        </View>
+        </BlurView>
       </View>
     </Modal>
   );
@@ -202,17 +206,26 @@ export const RestTimerModal: React.FC = () => {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
   },
-  modalContent: {
-    backgroundColor: Colors.card,
+  glassModalContent: {
+    backgroundColor: Colors.glassTabBar,
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 20,
+    right: 20,
+    height: 1.5,
+    backgroundColor: Colors.glassBorderTop,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -227,8 +240,10 @@ const styles = StyleSheet.create({
     color: Colors.neonGreen,
     letterSpacing: 1,
   },
-  closeButton: {
-    padding: Spacing.xs,
+  closeGlassButton: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.full,
   },
   circleContainer: {
     width: 220,
@@ -265,28 +280,28 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.md,
     width: '100%',
   },
-  presetButton: {
+  presetGlassButton: {
     flex: 1,
-    paddingVertical: Spacing.sm + 2,
-    backgroundColor: Colors.cardSecondary,
+    paddingVertical: Spacing.sm + 4,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.neonGreenBorder,
+    borderColor: Colors.glassBorder,
     alignItems: 'center',
   },
   presetButtonText: {
     color: Colors.textPrimary,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 13,
   },
-  customSection: {
+  customGlassSection: {
     width: '100%',
-    backgroundColor: Colors.cardSecondary,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     marginVertical: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
   },
   customSectionTitle: {
     fontSize: 11,
@@ -304,29 +319,31 @@ const styles = StyleSheet.create({
   stepperGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     borderRadius: BorderRadius.md,
-    padding: 4,
+    padding: 3,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
   },
   stepperBtn: {
-    padding: 8,
+    padding: 6,
   },
   stepperValue: {
     color: Colors.textPrimary,
     fontWeight: 'bold',
-    fontSize: 14,
-    minWidth: 50,
+    fontSize: 13,
+    minWidth: 46,
     textAlign: 'center',
   },
-  playCustomBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.neonGreen,
+  playCustomGlassBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.glassNeon,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.glassNeonBorder,
   },
   controlsRow: {
     flexDirection: 'row',
@@ -342,5 +359,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
 });

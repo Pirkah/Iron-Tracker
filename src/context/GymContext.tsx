@@ -72,6 +72,9 @@ interface GymContextType {
   stopRestTimer: () => void;
   hideRestTimer: () => void;
   showRestTimer: () => void;
+
+  // Data reload
+  loadAllData: () => Promise<void>;
 }
 
 const GymContext = createContext<GymContextType | undefined>(undefined);
@@ -85,6 +88,29 @@ export const GymProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [muscleGroups, setMuscleGroups] = useState<string[]>(DEFAULT_MUSCLE_GROUPS);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const loadAllData = useCallback(async () => {
+    try {
+      const [h, t, to, c, hid, m] = await Promise.all([
+        StorageService.loadHistory(),
+        StorageService.loadTemplates(),
+        StorageService.loadTemplateOrder(),
+        StorageService.loadCatalog(),
+        StorageService.loadHiddenExercises(),
+        StorageService.loadMuscleGroups(),
+      ]);
+      setHistory(h);
+      setWorkoutTemplates(t);
+      setTemplateOrder(to);
+      setExerciseCatalog(c);
+      setHiddenExercises(hid);
+      setMuscleGroups(m);
+    } catch (e) {
+      console.error('Erreur chargement données:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Chrono de repos
   const [restTimer, setRestTimer] = useState<RestTimerState>({
     initialSeconds: 90,
@@ -97,30 +123,8 @@ export const GymProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Charger les données au montage
   useEffect(() => {
-    async function initData() {
-      try {
-        const [h, t, to, c, hid, m] = await Promise.all([
-          StorageService.loadHistory(),
-          StorageService.loadTemplates(),
-          StorageService.loadTemplateOrder(),
-          StorageService.loadCatalog(),
-          StorageService.loadHiddenExercises(),
-          StorageService.loadMuscleGroups(),
-        ]);
-        setHistory(h);
-        setWorkoutTemplates(t);
-        setTemplateOrder(to);
-        setExerciseCatalog(c);
-        setHiddenExercises(hid);
-        setMuscleGroups(m);
-      } catch (e) {
-        console.error('Erreur chargement données:', e);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    initData();
-  }, []);
+    loadAllData();
+  }, [loadAllData]);
 
   // Timer Tick
   useEffect(() => {
@@ -759,6 +763,7 @@ export const GymProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         stopRestTimer,
         hideRestTimer,
         showRestTimer,
+        loadAllData,
       }}
     >
       {children}

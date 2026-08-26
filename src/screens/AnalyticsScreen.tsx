@@ -21,6 +21,7 @@ import {
   Activity,
 } from 'lucide-react-native';
 import { ExerciseProgressScreen } from './ExerciseProgressScreen';
+import { GlassButton } from '../components/common/GlassButton';
 
 export const AnalyticsScreen: React.FC = () => {
   const {
@@ -28,59 +29,57 @@ export const AnalyticsScreen: React.FC = () => {
     exerciseCatalog,
     hiddenExercises,
     muscleGroups,
-    getTotalSessionsCount,
+    toggleHideExercise,
     getTotalVolume,
     getAverageSessionsPerWeek,
     getFailurePercentage,
     getFavoriteExercise,
     getSessionFrequencies,
-    toggleHideExercise,
+    getAllUniqueExercises,
   } = useGym();
 
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
   const [selectedExoForProgress, setSelectedExoForProgress] = useState<string | null>(null);
   const [showHiddenView, setShowHiddenView] = useState(false);
 
-  const totalSessions = getTotalSessionsCount();
+  // Global calculations
+  const totalSessions = history.filter(s => s.isFinished).length;
   const totalVolume = getTotalVolume();
   const avgPerWeek = getAverageSessionsPerWeek();
   const failurePercent = getFailurePercentage();
   const favExo = getFavoriteExercise();
   const freqs = getSessionFrequencies();
 
-  // All exercises that have data in history
-  const allRecordedExercises = useMemo(() => {
-    const set = new Set<string>();
-    history.forEach(s => {
-      s.exercises.forEach(e => {
-        if (e.sets.length > 0) set.add(e.name.trim());
-      });
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [history]);
+  // All exercises recorded in history (excluding hidden)
+  const recordedExos = useMemo(() => {
+    return getAllUniqueExercises().filter((name: string) => !hiddenExercises.includes(name));
+  }, [getAllUniqueExercises, hiddenExercises]);
 
-  // Grouped exercises by muscle
-  const muscleGroupsWithExos = useMemo(() => {
-    const visible = allRecordedExercises.filter(e => !hiddenExercises.includes(e));
-    const dict: Record<string, string[]> = {};
-
-    visible.forEach(exo => {
-      const match = exerciseCatalog.find(
-        c => c.name.trim().toLowerCase() === exo.toLowerCase()
-      );
-      const muscle = match ? match.muscle : 'Autre';
-      if (!dict[muscle]) dict[muscle] = [];
-      dict[muscle].push(exo);
-    });
-
-    return Object.entries(dict)
-      .map(([muscle, exos]) => ({ muscle, exos: exos.sort() }))
-      .sort((a, b) => a.muscle.localeCompare(b.muscle));
-  }, [allRecordedExercises, hiddenExercises, exerciseCatalog]);
-
+  // Hidden exercises
   const hiddenRecordedExercises = useMemo(() => {
-    return allRecordedExercises.filter(e => hiddenExercises.includes(e));
-  }, [allRecordedExercises, hiddenExercises]);
+    return getAllUniqueExercises().filter((name: string) => hiddenExercises.includes(name));
+  }, [getAllUniqueExercises, hiddenExercises]);
+
+  // Muscle groups that have recorded exercises
+  const muscleGroupsWithExos = useMemo(() => {
+    const list: { muscle: string; count: number }[] = [];
+
+    muscleGroups.forEach((m: string) => {
+      const count = recordedExos.filter((exoName: string) => {
+        const match = exerciseCatalog.find(
+          c => c.name.trim().toLowerCase() === exoName.toLowerCase()
+        );
+        const muscle = match ? match.muscle : 'Autre';
+        return muscle === m;
+      }).length;
+
+      if (count > 0) {
+        list.push({ muscle: m, count });
+      }
+    });
+
+    return list;
+  }, [muscleGroups, recordedExos, exerciseCatalog]);
 
   // If viewing single exercise progression chart
   if (selectedExoForProgress) {
@@ -92,25 +91,23 @@ export const AnalyticsScreen: React.FC = () => {
     );
   }
 
-  // If viewing a single muscle folder
+  // If viewing exercises in a specific muscle folder
   if (selectedMuscle) {
-    const currentExos = allRecordedExercises
-      .filter(e => !hiddenExercises.includes(e))
-      .filter(exo => {
-        const match = exerciseCatalog.find(
-          c => c.name.trim().toLowerCase() === exo.toLowerCase()
-        );
-        const muscle = match ? match.muscle : 'Autre';
-        return muscle === selectedMuscle;
-      });
+    const currentExos = recordedExos.filter((exo: string) => {
+      const match = exerciseCatalog.find(
+        c => c.name.trim().toLowerCase() === exo.toLowerCase()
+      );
+      const muscle = match ? match.muscle : 'Autre';
+      return muscle === selectedMuscle;
+    });
 
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => setSelectedMuscle(null)}>
+          <TouchableOpacity style={styles.backGlassBtn} onPress={() => setSelectedMuscle(null)}>
             <ChevronRight
               color={Colors.neonGreen}
-              size={28}
+              size={24}
               style={{ transform: [{ rotate: '180deg' }] }}
             />
           </TouchableOpacity>
@@ -119,27 +116,28 @@ export const AnalyticsScreen: React.FC = () => {
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {currentExos.length === 0 ? (
-            <View style={styles.emptyCard}>
+            <View style={styles.emptyGlassCard}>
               <Text style={styles.emptyText}>Aucun exercice pour ce muscle</Text>
             </View>
           ) : (
-            currentExos.map(exoName => (
+            currentExos.map((exoName: string) => (
               <TouchableOpacity
                 key={exoName}
-                style={styles.exoProgressRow}
+                style={styles.exoProgressGlassRow}
                 onPress={() => setSelectedExoForProgress(exoName)}
                 activeOpacity={0.7}
               >
+                <View style={styles.glassReflectionTop} />
                 <Text style={styles.exoProgressName}>{exoName}</Text>
                 <View style={styles.exoRowActions}>
                   <TouchableOpacity
-                    style={styles.hideBtn}
+                    style={styles.hideGlassBtn}
                     onPress={e => {
                       e.stopPropagation();
                       toggleHideExercise(exoName);
                     }}
                   >
-                    <EyeOff color={Colors.textMuted} size={16} />
+                    <EyeOff color={Colors.textMuted} size={15} />
                   </TouchableOpacity>
                   <ChevronRight color={Colors.neonGreen} size={18} />
                 </View>
@@ -156,10 +154,10 @@ export const AnalyticsScreen: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => setShowHiddenView(false)}>
+          <TouchableOpacity style={styles.backGlassBtn} onPress={() => setShowHiddenView(false)}>
             <ChevronRight
               color={Colors.neonGreen}
-              size={28}
+              size={24}
               style={{ transform: [{ rotate: '180deg' }] }}
             />
           </TouchableOpacity>
@@ -168,20 +166,21 @@ export const AnalyticsScreen: React.FC = () => {
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {hiddenRecordedExercises.length === 0 ? (
-            <View style={styles.emptyCard}>
+            <View style={styles.emptyGlassCard}>
               <Text style={styles.emptyText}>Aucun exercice masqué</Text>
             </View>
           ) : (
-            hiddenRecordedExercises.map(exoName => (
-              <View key={exoName} style={styles.exoProgressRow}>
+            hiddenRecordedExercises.map((exoName: string) => (
+              <View key={exoName} style={styles.exoProgressGlassRow}>
+                <View style={styles.glassReflectionTop} />
                 <Text style={[styles.exoProgressName, { color: Colors.textMuted }]}>
                   {exoName}
                 </Text>
                 <TouchableOpacity
-                  style={styles.unhideBtn}
+                  style={styles.unhideGlassBtn}
                   onPress={() => toggleHideExercise(exoName)}
                 >
-                  <Eye color={Colors.neonGreen} size={16} style={{ marginRight: 4 }} />
+                  <Eye color={Colors.neonGreen} size={15} style={{ marginRight: 4 }} />
                   <Text style={styles.unhideBtnText}>Restaurer</Text>
                 </TouchableOpacity>
               </View>
@@ -196,8 +195,9 @@ export const AnalyticsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Total Sessions Big Hero Card */}
-        <View style={styles.heroCard}>
+        {/* Total Sessions Big Hero Glass Card */}
+        <View style={styles.heroGlassCard}>
+          <View style={styles.glassReflectionTop} />
           <Dumbbell color={Colors.neonGreen} size={32} />
           <Text style={styles.heroNumber}>{totalSessions}</Text>
           <Text style={styles.heroLabel}>SÉANCES VALIDÉES</Text>
@@ -206,8 +206,9 @@ export const AnalyticsScreen: React.FC = () => {
         {/* 2x2 Stats Grid */}
         <View style={styles.statsGrid}>
           {/* Total Volume */}
-          <View style={styles.statCard}>
-            <Scale color={Colors.neonGreen} size={20} />
+          <View style={styles.statGlassCard}>
+            <View style={styles.glassReflectionTop} />
+            <Scale color={Colors.neonGreen} size={18} />
             <Text style={styles.statCardLabel}>VOLUME TOTAL</Text>
             <View style={styles.statCardValueRow}>
               <Text style={styles.statCardValue}>{totalVolume}</Text>
@@ -216,8 +217,9 @@ export const AnalyticsScreen: React.FC = () => {
           </View>
 
           {/* Average Sessions/Week */}
-          <View style={styles.statCard}>
-            <Calendar color={Colors.neonGreen} size={20} />
+          <View style={styles.statGlassCard}>
+            <View style={styles.glassReflectionTop} />
+            <Calendar color={Colors.neonGreen} size={18} />
             <Text style={styles.statCardLabel}>FRÉQUENCE</Text>
             <View style={styles.statCardValueRow}>
               <Text style={styles.statCardValue}>{avgPerWeek}</Text>
@@ -226,8 +228,9 @@ export const AnalyticsScreen: React.FC = () => {
           </View>
 
           {/* Failure Rate */}
-          <View style={styles.statCard}>
-            <Zap color={Colors.failureGold} size={20} />
+          <View style={styles.statGlassCard}>
+            <View style={styles.glassReflectionTop} />
+            <Zap color={Colors.failureGold} size={18} />
             <Text style={styles.statCardLabel}>TAUX D'ÉCHEC</Text>
             <View style={styles.statCardValueRow}>
               <Text style={[styles.statCardValue, { color: Colors.failureGold }]}>
@@ -237,8 +240,9 @@ export const AnalyticsScreen: React.FC = () => {
           </View>
 
           {/* Favorite Exercise */}
-          <View style={styles.statCard}>
-            <Star color={Colors.bisetPurple} size={20} />
+          <View style={styles.statGlassCard}>
+            <View style={styles.glassReflectionTop} />
+            <Star color={Colors.bisetPurple} size={18} />
             <Text style={styles.statCardLabel}>EXO FAVORI</Text>
             <Text style={styles.statCardFavText} numberOfLines={1}>
               {favExo}
@@ -248,7 +252,8 @@ export const AnalyticsScreen: React.FC = () => {
 
         {/* Program Frequency Breakdown */}
         {freqs.most !== '-' && (
-          <View style={styles.freqCard}>
+          <View style={styles.freqGlassCard}>
+            <View style={styles.glassReflectionTop} />
             <Text style={styles.sectionHeaderTitle}>FRÉQUENCE DES PROGRAMMES</Text>
             <View style={styles.freqRow}>
               <Text style={styles.freqRowLabel}>Le plus fréquent :</Text>
@@ -268,7 +273,7 @@ export const AnalyticsScreen: React.FC = () => {
           <Text style={styles.sectionHeaderTitle}>COURBES DE PROGRESSION (PAR MUSCLE)</Text>
 
           {muscleGroupsWithExos.length === 0 ? (
-            <View style={styles.emptyCard}>
+            <View style={styles.emptyGlassCard}>
               <Activity color={Colors.textMuted} size={32} />
               <Text style={styles.emptyText}>Aucune statistique pour le moment</Text>
               <Text style={styles.emptySubText}>
@@ -279,35 +284,35 @@ export const AnalyticsScreen: React.FC = () => {
             muscleGroupsWithExos.map(group => (
               <TouchableOpacity
                 key={group.muscle}
-                style={styles.muscleRow}
+                style={styles.muscleFolderGlassCard}
                 onPress={() => setSelectedMuscle(group.muscle)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.muscleRowName}>{group.muscle.toUpperCase()}</Text>
-                <View style={styles.muscleRowRight}>
-                  <Text style={styles.muscleExoCount}>
-                    {group.exos.length} exo{group.exos.length > 1 ? 's' : ''}
+                <View style={styles.glassReflectionTop} />
+                <View>
+                  <Text style={styles.muscleFolderName}>{group.muscle.toUpperCase()}</Text>
+                  <Text style={styles.muscleFolderCount}>
+                    {group.count} exercice{group.count > 1 ? 's' : ''} pratiqué{group.count > 1 ? 's' : ''}
                   </Text>
-                  <ChevronRight color={Colors.neonGreen} size={18} />
                 </View>
+                <ChevronRight color={Colors.neonGreen} size={20} />
               </TouchableOpacity>
             ))
           )}
-
-          {/* Hidden Exercises Button */}
-          {hiddenRecordedExercises.length > 0 && (
-            <TouchableOpacity
-              style={styles.hiddenSectionBtn}
-              onPress={() => setShowHiddenView(true)}
-            >
-              <EyeOff color={Colors.textMuted} size={16} />
-              <Text style={styles.hiddenSectionBtnText}>
-                Exercices masqués ({hiddenRecordedExercises.length})
-              </Text>
-              <ChevronRight color={Colors.textMuted} size={18} style={{ marginLeft: 'auto' }} />
-            </TouchableOpacity>
-          )}
         </View>
+
+        {/* Hidden Exercises Footer Button */}
+        {hiddenRecordedExercises.length > 0 && (
+          <TouchableOpacity
+            style={styles.hiddenExosGlassBtn}
+            onPress={() => setShowHiddenView(true)}
+          >
+            <EyeOff color={Colors.textMuted} size={15} style={{ marginRight: 6 }} />
+            <Text style={styles.hiddenExosBtnText}>
+              Gérer les exercices masqués ({hiddenRecordedExercises.length})
+            </Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );
@@ -321,13 +326,15 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.cardBorder,
   },
-  backBtn: {
-    padding: Spacing.xs,
+  backGlassBtn: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.md,
     marginRight: Spacing.sm,
   },
   headerTitle: {
@@ -338,48 +345,69 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: Spacing.lg,
     gap: Spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
-  heroCard: {
-    backgroundColor: Colors.card,
+  heroGlassCard: {
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.glassNeonBorder,
+    shadowColor: Colors.neonGreen,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 6,
+    overflow: 'hidden',
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    height: 1.5,
+    backgroundColor: Colors.glassBorderTop,
   },
   heroNumber: {
     fontSize: 52,
     fontWeight: '900',
     color: Colors.textPrimary,
-    marginVertical: 4,
+    marginVertical: Spacing.xs,
   },
   heroLabel: {
     fontSize: 12,
     fontWeight: '900',
-    color: Colors.textSecondary,
-    letterSpacing: 1.5,
+    color: Colors.neonGreen,
+    letterSpacing: 2,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.md,
   },
-  statCard: {
+  statGlassCard: {
     width: '47.5%',
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    gap: 4,
+    backgroundColor: Colors.glassCard,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+    overflow: 'hidden',
   },
   statCardLabel: {
     fontSize: 10,
     fontWeight: '900',
     color: Colors.textSecondary,
-    letterSpacing: 0.5,
-    marginTop: 4,
+    letterSpacing: 1,
+    marginTop: Spacing.xs + 2,
+    marginBottom: Spacing.xs,
   },
   statCardValueRow: {
     flexDirection: 'row',
@@ -392,134 +420,123 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   statCardUnit: {
-    fontSize: 12,
+    fontSize: 11,
+    color: Colors.textSecondary,
     fontWeight: 'bold',
-    color: Colors.neonGreen,
   },
   statCardFavText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '700',
     color: Colors.textPrimary,
-    marginTop: 2,
   },
-  freqCard: {
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    gap: Spacing.sm,
+  freqGlassCard: {
+    backgroundColor: Colors.glassCard,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    overflow: 'hidden',
   },
   sectionHeaderTitle: {
     fontSize: 11,
     fontWeight: '900',
     color: Colors.textSecondary,
-    letterSpacing: 1,
-    marginBottom: Spacing.xs,
+    letterSpacing: 1.2,
+    marginBottom: Spacing.md,
   },
   freqRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: Spacing.xs + 2,
   },
   freqRowLabel: {
-    color: Colors.textSecondary,
     fontSize: 13,
+    color: Colors.textSecondary,
   },
   freqRowValue: {
-    color: Colors.neonGreen,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
+    color: Colors.textPrimary,
   },
   progressionSection: {
     gap: Spacing.sm,
   },
-  muscleRow: {
+  muscleFolderGlassCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.card,
-    padding: Spacing.md,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    padding: Spacing.md + 2,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    overflow: 'hidden',
   },
-  muscleRowName: {
-    color: Colors.neonGreen,
+  muscleFolderName: {
     fontSize: 15,
     fontWeight: '900',
+    color: Colors.textPrimary,
+    letterSpacing: 0.5,
   },
-  muscleRowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
+  muscleFolderCount: {
+    fontSize: 11,
+    color: Colors.neonGreen,
+    fontWeight: '600',
+    marginTop: 2,
   },
-  muscleExoCount: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  exoProgressRow: {
+  exoProgressGlassRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.card,
-    padding: Spacing.md,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    padding: Spacing.md + 2,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    marginBottom: Spacing.sm,
+    overflow: 'hidden',
   },
   exoProgressName: {
-    color: Colors.textPrimary,
     fontSize: 15,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    color: Colors.textPrimary,
     flex: 1,
   },
   exoRowActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
-  hideBtn: {
-    padding: Spacing.xs,
+  hideGlassBtn: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.sm,
   },
-  unhideBtn: {
+  unhideGlassBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.neonGreenSoft,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.glassNeon,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.glassNeonBorder,
   },
   unhideBtnText: {
     color: Colors.neonGreen,
     fontSize: 12,
     fontWeight: 'bold',
   },
-  hiddenSectionBtn: {
-    flexDirection: 'row',
+  emptyGlassCard: {
+    backgroundColor: Colors.glassCard,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    marginTop: Spacing.sm,
-    gap: Spacing.sm,
-  },
-  hiddenSectionBtnText: {
-    color: Colors.textMuted,
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  emptyCard: {
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xxl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    justifyContent: 'center',
     gap: Spacing.xs,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
   },
   emptyText: {
     color: Colors.textPrimary,
@@ -531,5 +548,16 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: 12,
     textAlign: 'center',
+  },
+  hiddenExosGlassBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+  },
+  hiddenExosBtnText: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

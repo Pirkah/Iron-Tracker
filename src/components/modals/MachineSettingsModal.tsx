@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Colors, Spacing, BorderRadius } from '../../theme';
 import { Settings2, X, Check } from 'lucide-react-native';
+import { GlassButton } from '../common/GlassButton';
 
 interface MachineSettingsModalProps {
   visible: boolean;
@@ -46,14 +47,15 @@ export const MachineSettingsModal: React.FC<MachineSettingsModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}
       >
-        <View style={styles.card}>
+        <View style={styles.glassCard}>
+          <View style={styles.glassReflectionTop} />
           <View style={styles.header}>
             <View style={styles.titleRow}>
-              <Settings2 color={Colors.neonGreen} size={20} style={{ marginRight: 8 }} />
+              <Settings2 color={Colors.neonGreen} size={18} style={{ marginRight: 6 }} />
               <Text style={styles.title}>RÉGLAGES MACHINE</Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <X color={Colors.textSecondary} size={22} />
+            <TouchableOpacity onPress={onClose} style={styles.closeGlassBtn}>
+              <X color={Colors.textSecondary} size={18} />
             </TouchableOpacity>
           </View>
 
@@ -74,13 +76,19 @@ export const MachineSettingsModal: React.FC<MachineSettingsModalProps> = ({
           />
 
           <View style={styles.actionsRow}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelBtnText}>Annuler</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-              <Check color={Colors.textDark} size={18} style={{ marginRight: 4 }} />
-              <Text style={styles.saveBtnText}>Enregistrer</Text>
-            </TouchableOpacity>
+            <GlassButton
+              title="Annuler"
+              variant="glass"
+              onPress={onClose}
+              style={{ flex: 1 }}
+            />
+            <GlassButton
+              title="Enregistrer"
+              variant="neon"
+              icon={<Check color={Colors.neonGreen} size={16} />}
+              onPress={handleSave}
+              style={{ flex: 1 }}
+            />
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -96,14 +104,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.lg,
   },
-  card: {
+  glassCard: {
     width: '100%',
     maxWidth: 400,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 14,
+    right: 14,
+    height: 1.5,
+    backgroundColor: Colors.glassBorderTop,
   },
   header: {
     flexDirection: 'row',
@@ -116,16 +132,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '900',
     color: Colors.neonGreen,
     letterSpacing: 0.5,
   },
-  closeBtn: {
-    padding: Spacing.xs,
+  closeGlassBtn: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.full,
   },
   exoName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
@@ -140,7 +158,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     color: Colors.textPrimary,
-    fontSize: 15,
+    fontSize: 14,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
     textAlignVertical: 'top',
@@ -150,31 +168,5 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     gap: Spacing.md,
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.cardSecondary,
-    alignItems: 'center',
-  },
-  cancelBtnText: {
-    color: Colors.textSecondary,
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  saveBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.neonGreen,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveBtnText: {
-    color: Colors.textDark,
-    fontWeight: 'bold',
-    fontSize: 14,
   },
 });

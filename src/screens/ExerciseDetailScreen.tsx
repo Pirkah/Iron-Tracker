@@ -24,6 +24,7 @@ import {
   ChevronLeft,
 } from 'lucide-react-native';
 import { MachineSettingsModal } from '../components/modals/MachineSettingsModal';
+import { GlassButton } from '../components/common/GlassButton';
 
 interface ExerciseDetailScreenProps {
   exercise: WorkoutExercise;
@@ -33,56 +34,52 @@ interface ExerciseDetailScreenProps {
 }
 
 export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
-  exercise: initialExercise,
+  exercise,
   sessionDate,
   onUpdate,
   onBack,
 }) => {
   const { getLastPerformance, startRestTimer, addToCatalog } = useGym();
-  const [exercise, setExercise] = useState<WorkoutExercise>(initialExercise);
-  const [lastPerf, setLastPerf] = useState<WorkoutExercise | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [lastPerf, setLastPerf] = useState<WorkoutExercise | null>(null);
 
   const isCardio = isExerciseCardio(exercise.name);
 
+  // Fetch last performance on mount
   useEffect(() => {
-    const perf = getLastPerformance(exercise.name, sessionDate);
-    setLastPerf(perf);
+    const prev = getLastPerformance(exercise.name, sessionDate);
+    setLastPerf(prev);
   }, [exercise.name, sessionDate, getLastPerformance]);
 
-  const updateExerciseState = (newExo: WorkoutExercise) => {
-    setExercise(newExo);
-    onUpdate(newExo);
+  const updateExerciseState = (updated: WorkoutExercise) => {
+    onUpdate(updated);
   };
 
-  const handleSetTargetCount = (target: number) => {
-    const safeTarget = Math.max(0, Math.min(20, target));
+  // Adjust target set count
+  const handleSetTargetCount = (count: number) => {
+    const newCount = Math.max(0, Math.min(20, count));
     const currentSets = [...exercise.sets];
 
-    if (safeTarget > currentSets.length) {
-      const added = safeTarget - currentSets.length;
-      for (let i = 0; i < added; i++) {
-        // Pré-remplir avec la dernière série si dispo pour un confort maximal
-        const prevSet = currentSets[currentSets.length - 1];
+    if (newCount > currentSets.length) {
+      // Add missing sets, copying previous weight
+      const lastSet = currentSets[currentSets.length - 1];
+      const diff = newCount - currentSets.length;
+      for (let i = 0; i < diff; i++) {
         currentSets.push({
           id: Math.random().toString(36).substring(2, 9),
-          weight: prevSet ? prevSet.weight : null,
-          reps: prevSet ? prevSet.reps : null,
-          repsRight: prevSet ? prevSet.repsRight : null,
-          duration: prevSet ? prevSet.duration : null,
-          speed: prevSet ? prevSet.speed : null,
-          incline: prevSet ? prevSet.incline : null,
+          weight: lastSet ? lastSet.weight : null,
+          reps: null,
           isFailure: false,
           drops: [],
         });
       }
-    } else if (safeTarget < currentSets.length) {
-      currentSets.splice(safeTarget);
+    } else if (newCount < currentSets.length) {
+      currentSets.splice(newCount);
     }
 
     updateExerciseState({
       ...exercise,
-      targetSetCount: safeTarget,
+      targetSetCount: newCount,
       sets: currentSets,
     });
   };
@@ -92,48 +89,41 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
     field: keyof GymSet,
     value: any
   ) => {
-    const currentSets = [...exercise.sets];
-    currentSets[index] = { ...currentSets[index], [field]: value };
-    updateExerciseState({ ...exercise, sets: currentSets });
+    const updated = [...exercise.sets];
+    updated[index] = { ...updated[index], [field]: value };
+    updateExerciseState({ ...exercise, sets: updated });
   };
 
-  const handleToggleFailure = (index: number) => {
-    const currentSets = [...exercise.sets];
-    const nextVal = !currentSets[index].isFailure;
-    currentSets[index] = { ...currentSets[index], isFailure: nextVal };
-    if (nextVal) triggerHaptic('medium');
-    else triggerHaptic('light');
-    updateExerciseState({ ...exercise, sets: currentSets });
+  const toggleFailure = (index: number) => {
+    triggerHaptic('medium');
+    const updated = [...exercise.sets];
+    updated[index] = { ...updated[index], isFailure: !updated[index].isFailure };
+    updateExerciseState({ ...exercise, sets: updated });
   };
 
-  const handleToggleSign = (index: number) => {
-    const currentSets = [...exercise.sets];
-    const currentW = currentSets[index].weight || 0;
-    currentSets[index] = { ...currentSets[index], weight: currentW * -1 };
+  const toggleNegativeWeight = (index: number) => {
     triggerHaptic('light');
-    updateExerciseState({ ...exercise, sets: currentSets });
+    const updated = [...exercise.sets];
+    const currentWeight = updated[index].weight;
+    if (currentWeight !== null && currentWeight !== undefined) {
+      updated[index] = { ...updated[index], weight: -currentWeight };
+      updateExerciseState({ ...exercise, sets: updated });
+    }
   };
 
-  // Drop Sets (Dégressif)
   const handleAddDrop = (setIndex: number) => {
+    triggerHaptic('light');
     const currentSets = [...exercise.sets];
     const targetSet = currentSets[setIndex];
-    const lastWeight = targetSet.drops.length > 0
-      ? targetSet.drops[targetSet.drops.length - 1].weight
-      : targetSet.weight;
-
-    const newDrops = [
+    const updatedDrops = [
       ...targetSet.drops,
       {
         id: Math.random().toString(36).substring(2, 9),
-        weight: lastWeight ? Math.max(0, lastWeight - 5) : null,
+        weight: targetSet.weight ? Math.max(0, targetSet.weight - 5) : null,
         reps: null,
-        repsRight: null,
       },
     ];
-
-    currentSets[setIndex] = { ...targetSet, drops: newDrops };
-    triggerHaptic('light');
+    currentSets[setIndex] = { ...targetSet, drops: updatedDrops };
     updateExerciseState({ ...exercise, sets: currentSets });
   };
 
@@ -183,16 +173,17 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
           ) : null}
         </View>
         <TouchableOpacity
-          style={styles.settingsBtn}
+          style={styles.settingsGlassBtn}
           onPress={() => setShowSettingsModal(true)}
         >
-          <Info color={exercise.machineSettings ? Colors.neonGreen : Colors.textMuted} size={22} />
+          <Info color={exercise.machineSettings ? Colors.neonGreen : Colors.textMuted} size={20} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Configuration Card */}
-        <View style={styles.card}>
+        {/* Configuration Glass Card */}
+        <View style={styles.glassCard}>
+          <View style={styles.glassReflectionTop} />
           <Text style={styles.sectionTitle}>CONFIGURATION</Text>
 
           {/* Sets Count Stepper */}
@@ -202,17 +193,17 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
             </Text>
             <View style={styles.stepperWrap}>
               <TouchableOpacity
-                style={styles.stepperBtn}
+                style={styles.stepperGlassBtn}
                 onPress={() => handleSetTargetCount(exercise.sets.length - 1)}
               >
-                <Minus color={Colors.textPrimary} size={16} />
+                <Minus color={Colors.textPrimary} size={15} />
               </TouchableOpacity>
               <Text style={styles.stepperText}>{exercise.sets.length}</Text>
               <TouchableOpacity
-                style={styles.stepperBtn}
+                style={styles.stepperGlassBtn}
                 onPress={() => handleSetTargetCount(exercise.sets.length + 1)}
               >
-                <Plus color={Colors.textPrimary} size={16} />
+                <Plus color={Colors.textPrimary} size={15} />
               </TouchableOpacity>
             </View>
           </View>
@@ -237,48 +228,42 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
           )}
         </View>
 
-        {/* Sets & Performance Table */}
-        <View style={styles.card}>
+        {/* Sets & Performance Table Glass Card */}
+        <View style={styles.glassCard}>
+          <View style={styles.glassReflectionTop} />
           <View style={styles.perfHeaderRow}>
             <Text style={styles.sectionTitle}>PERFORMANCES</Text>
             <TouchableOpacity
-              style={styles.quickTimerBtn}
+              style={styles.quickTimerGlassBtn}
               onPress={() => startRestTimer(90)}
             >
-              <Timer color={Colors.neonGreen} size={16} />
+              <Timer color={Colors.neonGreen} size={15} />
               <Text style={styles.quickTimerText}>Chrono</Text>
             </TouchableOpacity>
           </View>
 
           {exercise.sets.length === 0 ? (
-            <Text style={styles.emptySetsText}>
-              Ajoute des séries avec les boutons ci-dessus 👆
-            </Text>
+            <Text style={styles.emptySetsText}>Aucune série. Ajoutes-en dans la configuration.</Text>
           ) : (
             exercise.sets.map((set, setIndex) => {
-              const lastSet = lastPerf && setIndex < lastPerf.sets.length ? lastPerf.sets[setIndex] : null;
+              const prevSet = lastPerf?.sets?.[setIndex];
+              const prevHint = prevSet
+                ? `Dernière fois : ${formatLastPerformanceSet(prevSet, isCardio, exercise.isUnilateral)}`
+                : null;
 
               return (
                 <View key={set.id || setIndex} style={styles.setContainer}>
-                  {/* Previous Performance Hint */}
-                  {lastSet ? (
-                    <Text style={styles.lastPerfText}>
-                      Dernière fois : {formatLastPerformanceSet(lastSet, isCardio, exercise.isUnilateral)}
-                    </Text>
-                  ) : lastPerf ? (
-                    <Text style={[styles.lastPerfText, { color: Colors.textMuted }]}>
-                      Pas de donnée pour cette série
-                    </Text>
-                  ) : null}
+                  {/* Previous performance reminder */}
+                  {prevHint ? <Text style={styles.lastPerfText}>{prevHint}</Text> : null}
 
-                  {/* Set Row Input */}
+                  {/* Main Set Inputs Row */}
                   <View style={styles.setRow}>
                     <View style={styles.setNumberBadge}>
-                      <Text style={styles.setNumberText}>#{setIndex + 1}</Text>
+                      <Text style={styles.setNumberText}>S{setIndex + 1}</Text>
                     </View>
 
-                    {/* Cardio vs Strength Input */}
                     {isCardio ? (
+                      /* Cardio Inputs */
                       <View style={styles.cardioInputsRow}>
                         <View style={styles.inputWrap}>
                           <TextInput
@@ -286,7 +271,7 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                             keyboardType="numeric"
                             placeholder="Min"
                             placeholderTextColor={Colors.textMuted}
-                            value={set.duration ? String(set.duration) : ''}
+                            value={set.duration !== null && set.duration !== undefined ? String(set.duration) : ''}
                             onChangeText={v => handleSetFieldChange(setIndex, 'duration', v ? parseFloat(v.replace(',', '.')) : null)}
                           />
                           <Text style={styles.inputUnit}>min</Text>
@@ -298,7 +283,7 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                             keyboardType="numeric"
                             placeholder="Km/h"
                             placeholderTextColor={Colors.textMuted}
-                            value={set.speed ? String(set.speed) : ''}
+                            value={set.speed !== null && set.speed !== undefined ? String(set.speed) : ''}
                             onChangeText={v => handleSetFieldChange(setIndex, 'speed', v ? parseFloat(v.replace(',', '.')) : null)}
                           />
                           <Text style={styles.inputUnit}>km/h</Text>
@@ -308,20 +293,21 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                           <TextInput
                             style={styles.smartInput}
                             keyboardType="numeric"
-                            placeholder="%"
+                            placeholder="Incl."
                             placeholderTextColor={Colors.textMuted}
-                            value={set.incline ? String(set.incline) : ''}
+                            value={set.incline !== null && set.incline !== undefined ? String(set.incline) : ''}
                             onChangeText={v => handleSetFieldChange(setIndex, 'incline', v ? parseFloat(v.replace(',', '.')) : null)}
                           />
                           <Text style={styles.inputUnit}>%</Text>
                         </View>
                       </View>
                     ) : (
+                      /* Strength Inputs */
                       <View style={styles.muscuInputsRow}>
-                        {/* +/- Assist Toggle */}
+                        {/* Assist +/- Toggle */}
                         <TouchableOpacity
-                          style={styles.signBtn}
-                          onPress={() => handleToggleSign(setIndex)}
+                          style={styles.signGlassBtn}
+                          onPress={() => toggleNegativeWeight(setIndex)}
                         >
                           <Text style={styles.signBtnText}>+/-</Text>
                         </TouchableOpacity>
@@ -347,7 +333,7 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                         <View style={styles.inputWrap}>
                           <TextInput
                             style={styles.smartInput}
-                            keyboardType="number-pad"
+                            keyboardType="numeric"
                             placeholder="Reps"
                             placeholderTextColor={Colors.textMuted}
                             value={set.reps !== null && set.reps !== undefined ? String(set.reps) : ''}
@@ -355,14 +341,14 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                           />
                         </View>
 
-                        {/* Right Reps if Unilateral */}
+                        {/* Unilateral Right Side Reps */}
                         {exercise.isUnilateral && (
                           <>
                             <Text style={styles.timesSeparator}>D</Text>
                             <View style={styles.inputWrap}>
                               <TextInput
                                 style={styles.smartInput}
-                                keyboardType="number-pad"
+                                keyboardType="numeric"
                                 placeholder="Reps"
                                 placeholderTextColor={Colors.textMuted}
                                 value={set.repsRight !== null && set.repsRight !== undefined ? String(set.repsRight) : ''}
@@ -375,15 +361,15 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                         {/* Failure Bolt ⚡️ */}
                         <TouchableOpacity
                           style={[
-                            styles.failureBtn,
-                            set.isFailure && styles.failureBtnActive,
+                            styles.failureGlassBtn,
+                            set.isFailure && styles.failureGlassBtnActive,
                           ]}
-                          onPress={() => handleToggleFailure(setIndex)}
+                          onPress={() => toggleFailure(setIndex)}
                         >
                           <Zap
                             color={set.isFailure ? Colors.textDark : Colors.textMuted}
-                            fill={set.isFailure ? Colors.textDark : 'none'}
-                            size={18}
+                            fill={set.isFailure ? Colors.textDark : 'transparent'}
+                            size={16}
                           />
                         </TouchableOpacity>
                       </View>
@@ -391,11 +377,12 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                   </View>
 
                   {/* Drop Sets (Dégressif) List */}
-                  {set.drops && set.drops.length > 0 && (
+                  {!isCardio && (
                     <View style={styles.dropsContainer}>
                       {set.drops.map((drop, dropIndex) => (
                         <View key={drop.id || dropIndex} style={styles.dropRow}>
-                          <CornerDownRight color={Colors.dropRed} size={16} />
+                          <CornerDownRight color={Colors.dropRed} size={15} />
+
                           <View style={styles.dropInputWrap}>
                             <TextInput
                               style={[styles.smartInput, styles.dropInput]}
@@ -412,7 +399,7 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                           <View style={styles.dropInputWrap}>
                             <TextInput
                               style={[styles.smartInput, styles.dropInput]}
-                              keyboardType="number-pad"
+                              keyboardType="numeric"
                               placeholder="Reps"
                               placeholderTextColor={Colors.textMuted}
                               value={drop.reps !== null && drop.reps !== undefined ? String(drop.reps) : ''}
@@ -426,7 +413,7 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                               <View style={styles.dropInputWrap}>
                                 <TextInput
                                   style={[styles.smartInput, styles.dropInput]}
-                                  keyboardType="number-pad"
+                                  keyboardType="numeric"
                                   placeholder="Reps"
                                   placeholderTextColor={Colors.textMuted}
                                   value={drop.repsRight !== null && drop.repsRight !== undefined ? String(drop.repsRight) : ''}
@@ -437,25 +424,23 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                           )}
 
                           <TouchableOpacity
-                            onPress={() => handleDeleteDrop(setIndex, drop.id)}
                             style={styles.deleteDropBtn}
+                            onPress={() => handleDeleteDrop(setIndex, drop.id)}
                           >
-                            <Trash2 color={Colors.textMuted} size={16} />
+                            <Trash2 color={Colors.textMuted} size={14} />
                           </TouchableOpacity>
                         </View>
                       ))}
-                    </View>
-                  )}
 
-                  {/* Add Drop Button */}
-                  {!isCardio && (
-                    <TouchableOpacity
-                      style={styles.addDropBtn}
-                      onPress={() => handleAddDrop(setIndex)}
-                    >
-                      <CornerDownRight color={Colors.dropRed} size={14} />
-                      <Text style={styles.addDropText}>Dégressif (Drop set)</Text>
-                    </TouchableOpacity>
+                      {/* Add Drop Set Button */}
+                      <TouchableOpacity
+                        style={styles.addDropBtn}
+                        onPress={() => handleAddDrop(setIndex)}
+                      >
+                        <CornerDownRight color={Colors.dropRed} size={13} />
+                        <Text style={styles.addDropText}>Ajouter dégressif (Drop set)</Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </View>
               );
@@ -485,18 +470,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.background,
     borderBottomWidth: 1,
     borderBottomColor: Colors.cardBorder,
   },
   backBtn: {
     padding: Spacing.xs,
-    marginRight: Spacing.sm,
   },
   headerTitleWrap: {
     flex: 1,
+    marginHorizontal: Spacing.sm,
   },
   headerTitle: {
     fontSize: 18,
@@ -509,20 +493,38 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
-  settingsBtn: {
-    padding: Spacing.xs,
+  settingsGlassBtn: {
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
   },
   scrollContent: {
     padding: Spacing.lg,
     gap: Spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
-  card: {
-    backgroundColor: Colors.card,
+  glassCard: {
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    height: 1.5,
+    backgroundColor: Colors.glassBorderTop,
   },
   sectionTitle: {
     fontSize: 12,
@@ -549,13 +551,13 @@ const styles = StyleSheet.create({
   stepperWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.md,
-    padding: 4,
+    padding: 3,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
   },
-  stepperBtn: {
+  stepperGlassBtn: {
     padding: Spacing.sm,
   },
   stepperText: {
@@ -571,16 +573,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.md,
   },
-  quickTimerBtn: {
+  quickTimerGlassBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.neonGreenSoft,
-    paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: 4,
+    backgroundColor: Colors.glassNeon,
+    paddingHorizontal: Spacing.sm + 4,
+    paddingVertical: 5,
     borderRadius: BorderRadius.full,
     gap: 4,
     borderWidth: 1,
-    borderColor: Colors.neonGreenBorder,
+    borderColor: Colors.glassNeonBorder,
   },
   quickTimerText: {
     color: Colors.neonGreen,
@@ -611,12 +613,12 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   setNumberBadge: {
-    width: 38,
+    width: 36,
     alignItems: 'center',
   },
   setNumberText: {
     color: Colors.blueAccent,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '900',
   },
   muscuInputsRow: {
@@ -631,13 +633,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  signBtn: {
-    backgroundColor: Colors.surface,
+  signGlassBtn: {
+    backgroundColor: Colors.glassCard,
     paddingHorizontal: 6,
     paddingVertical: 8,
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
   },
   signBtnText: {
     color: Colors.textSecondary,
@@ -647,17 +649,17 @@ const styles = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(10, 10, 14, 0.85)',
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
     paddingHorizontal: 8,
   },
   smartInput: {
     color: Colors.textPrimary,
     fontSize: 15,
     fontWeight: 'bold',
-    minWidth: 44,
+    minWidth: 42,
     height: 38,
     textAlign: 'center',
   },
@@ -671,20 +673,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
   },
-  failureBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: Colors.surface,
+  failureGlassBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.glassCard,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
     marginLeft: 'auto',
   },
-  failureBtnActive: {
+  failureGlassBtnActive: {
     backgroundColor: Colors.failureGold,
     borderColor: Colors.failureGold,
+    shadowColor: Colors.failureGold,
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 4,
   },
   dropsContainer: {
     marginLeft: 45,
@@ -699,10 +705,10 @@ const styles = StyleSheet.create({
   dropInputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(255, 77, 77, 0.08)',
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.dropRed,
+    borderColor: Colors.glassRedBorder,
     paddingHorizontal: 6,
   },
   dropInput: {

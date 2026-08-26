@@ -18,12 +18,12 @@ import {
   Edit2,
   FolderPlus,
   Layers,
-  MoreVertical,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
 } from 'lucide-react-native';
 import { AddExerciseModal } from '../components/modals/AddExerciseModal';
+import { GlassButton } from '../components/common/GlassButton';
 
 export const ProgramsScreen: React.FC = () => {
   const {
@@ -100,12 +100,15 @@ export const ProgramsScreen: React.FC = () => {
       {/* Sub Header Action Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity
-          style={styles.reorderToggleBtn}
+          style={[
+            styles.reorderToggleGlassBtn,
+            isEditOrderMode && styles.reorderToggleGlassBtnActive,
+          ]}
           onPress={() => setIsEditOrderMode(!isEditOrderMode)}
         >
           <ArrowUpDown
             color={isEditOrderMode ? Colors.neonGreen : Colors.textSecondary}
-            size={16}
+            size={14}
             style={{ marginRight: 4 }}
           />
           <Text
@@ -118,14 +121,13 @@ export const ProgramsScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.newProgramBtn}
+        <GlassButton
+          title="NOUVEAU"
+          variant="neon"
+          size="sm"
+          icon={<FolderPlus color={Colors.neonGreen} size={16} />}
           onPress={() => setShowAddProgramModal(true)}
-          activeOpacity={0.8}
-        >
-          <FolderPlus color={Colors.textDark} size={18} style={{ marginRight: 6 }} />
-          <Text style={styles.newProgramBtnText}>NOUVEAU</Text>
-        </TouchableOpacity>
+        />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollList}>
@@ -141,7 +143,10 @@ export const ProgramsScreen: React.FC = () => {
             const items = workoutTemplates[templateName] || [];
 
             return (
-              <View key={templateName} style={styles.programCard}>
+              <View key={templateName} style={styles.programGlassCard}>
+                {/* Specular glass reflection */}
+                <View style={styles.glassReflectionTop} />
+
                 {/* Header of Program Card */}
                 <View style={styles.cardHeader}>
                   <View style={styles.cardHeaderTitleWrap}>
@@ -154,17 +159,17 @@ export const ProgramsScreen: React.FC = () => {
                   {isEditOrderMode ? (
                     <View style={styles.reorderArrows}>
                       <TouchableOpacity
-                        style={styles.arrowBtn}
+                        style={styles.arrowGlassBtn}
                         onPress={() => handleMoveTemplate(index, 'up')}
                         disabled={index === 0}
                       >
                         <ArrowUp
                           color={index === 0 ? Colors.textMuted : Colors.textPrimary}
-                          size={18}
+                          size={16}
                         />
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={styles.arrowBtn}
+                        style={styles.arrowGlassBtn}
                         onPress={() => handleMoveTemplate(index, 'down')}
                         disabled={index === templateOrder.length - 1}
                       >
@@ -174,16 +179,16 @@ export const ProgramsScreen: React.FC = () => {
                               ? Colors.textMuted
                               : Colors.textPrimary
                           }
-                          size={18}
+                          size={16}
                         />
                       </TouchableOpacity>
                     </View>
                   ) : (
                     <TouchableOpacity
-                      style={styles.deleteProgBtn}
+                      style={styles.deleteProgGlassBtn}
                       onPress={() => handleDeleteProgramPrompt(templateName)}
                     >
-                      <Trash2 color={Colors.danger} size={18} />
+                      <Trash2 color={Colors.danger} size={16} />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -206,19 +211,19 @@ export const ProgramsScreen: React.FC = () => {
 
                           <View style={styles.itemActions}>
                             <TouchableOpacity
-                              style={styles.itemActionBtn}
+                              style={styles.itemActionGlassBtn}
                               onPress={() => {
                                 setItemBeingEdited({ templateName, item });
                                 setEditedName(item.name);
                               }}
                             >
-                              <Edit2 color={Colors.textSecondary} size={15} />
+                              <Edit2 color={Colors.textSecondary} size={14} />
                             </TouchableOpacity>
                             <TouchableOpacity
-                              style={styles.itemActionBtn}
+                              style={styles.itemActionGlassBtn}
                               onPress={() => deleteExerciseFromTemplate(templateName, item.id)}
                             >
-                              <Trash2 color={Colors.textMuted} size={15} />
+                              <Trash2 color={Colors.danger} size={14} />
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -231,24 +236,26 @@ export const ProgramsScreen: React.FC = () => {
                 {!isEditOrderMode && (
                   <View style={styles.cardBottomActions}>
                     <TouchableOpacity
-                      style={styles.addSimpleBtn}
+                      style={styles.addSimpleGlassBtn}
                       onPress={() => {
                         setSelectedTemplateForAdd(templateName);
                         setIsBisetAdd(false);
                       }}
+                      activeOpacity={0.7}
                     >
-                      <Plus color={Colors.neonGreen} size={16} />
+                      <Plus color={Colors.neonGreen} size={15} />
                       <Text style={styles.addSimpleText}>Ajouter Exo</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={styles.addBisetBtn}
+                      style={styles.addBisetGlassBtn}
                       onPress={() => {
                         setSelectedTemplateForAdd(templateName);
                         setIsBisetAdd(true);
                       }}
+                      activeOpacity={0.7}
                     >
-                      <Layers color={Colors.bisetPurple} size={16} />
+                      <Layers color={Colors.bisetPurple} size={15} />
                       <Text style={styles.addBisetText}>Ajouter Biset</Text>
                     </TouchableOpacity>
                   </View>
@@ -275,7 +282,8 @@ export const ProgramsScreen: React.FC = () => {
       {/* New Program Modal */}
       <Modal visible={showAddProgramModal} transparent={true} animationType="fade">
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+          <View style={styles.modalGlassCard}>
+            <View style={styles.glassReflectionTop} />
             <Text style={styles.modalTitle}>Nouveau Programme</Text>
             <TextInput
               style={styles.modalInput}
@@ -286,15 +294,18 @@ export const ProgramsScreen: React.FC = () => {
               autoFocus={true}
             />
             <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
+              <GlassButton
+                title="Annuler"
+                variant="glass"
                 onPress={() => setShowAddProgramModal(false)}
-              >
-                <Text style={styles.modalCancelText}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleCreateProgram}>
-                <Text style={styles.modalConfirmText}>Créer</Text>
-              </TouchableOpacity>
+                style={{ flex: 1 }}
+              />
+              <GlassButton
+                title="Créer"
+                variant="neon"
+                onPress={handleCreateProgram}
+                style={{ flex: 1 }}
+              />
             </View>
           </View>
         </View>
@@ -304,7 +315,8 @@ export const ProgramsScreen: React.FC = () => {
       {itemBeingEdited && (
         <Modal visible={!!itemBeingEdited} transparent={true} animationType="fade">
           <View style={styles.modalBackdrop}>
-            <View style={styles.modalCard}>
+            <View style={styles.modalGlassCard}>
+              <View style={styles.glassReflectionTop} />
               <Text style={styles.modalTitle}>Renommer dans ce programme</Text>
               <TextInput
                 style={styles.modalInput}
@@ -313,15 +325,18 @@ export const ProgramsScreen: React.FC = () => {
                 autoFocus={true}
               />
               <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={styles.modalCancelBtn}
+                <GlassButton
+                  title="Annuler"
+                  variant="glass"
                   onPress={() => setItemBeingEdited(null)}
-                >
-                  <Text style={styles.modalCancelText}>Annuler</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleSaveEditItem}>
-                  <Text style={styles.modalConfirmText}>Valider</Text>
-                </TouchableOpacity>
+                  style={{ flex: 1 }}
+                />
+                <GlassButton
+                  title="Valider"
+                  variant="neon"
+                  onPress={handleSaveEditItem}
+                  style={{ flex: 1 }}
+                />
               </View>
             </View>
           </View>
@@ -345,39 +360,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.cardBorder,
   },
-  reorderToggleBtn: {
+  reorderToggleGlassBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.glassCard,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
+  },
+  reorderToggleGlassBtnActive: {
+    backgroundColor: Colors.glassNeon,
+    borderColor: Colors.glassNeonBorder,
   },
   reorderToggleText: {
     fontSize: 12,
     fontWeight: 'bold',
     color: Colors.textSecondary,
   },
-  newProgramBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.neonGreen,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
-    borderRadius: BorderRadius.md,
-  },
-  newProgramBtnText: {
-    color: Colors.textDark,
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
   scrollList: {
     padding: Spacing.lg,
     gap: Spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
   emptyContainer: {
     padding: Spacing.xxl,
@@ -393,19 +398,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: Spacing.xs,
   },
-  programCard: {
-    backgroundColor: Colors.card,
+  programGlassCard: {
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    height: 1.5,
+    backgroundColor: Colors.glassBorderTop,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: Spacing.md + 2,
-    backgroundColor: Colors.cardSecondary,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderBottomWidth: 1,
     borderBottomColor: Colors.cardBorder,
   },
@@ -424,17 +442,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 2,
   },
-  deleteProgBtn: {
-    padding: Spacing.xs,
+  deleteProgGlassBtn: {
+    padding: 7,
+    backgroundColor: Colors.glassRed,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.glassRedBorder,
   },
   reorderArrows: {
     flexDirection: 'row',
     gap: Spacing.xs,
   },
-  arrowBtn: {
+  arrowGlassBtn: {
     padding: 6,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
   },
   itemsList: {
     paddingVertical: Spacing.xs,
@@ -478,18 +502,20 @@ const styles = StyleSheet.create({
   },
   itemActions: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
-  itemActionBtn: {
-    padding: Spacing.xs,
+  itemActionGlassBtn: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: BorderRadius.sm,
   },
   cardBottomActions: {
     flexDirection: 'row',
     borderTopWidth: 1,
     borderTopColor: Colors.cardBorder,
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  addSimpleBtn: {
+  addSimpleGlassBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -504,7 +530,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  addBisetBtn: {
+  addBisetGlassBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -524,14 +550,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.lg,
   },
-  modalCard: {
+  modalGlassCard: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
   },
   modalTitle: {
     fontSize: 16,
@@ -552,27 +578,5 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     gap: Spacing.md,
-  },
-  modalCancelBtn: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    backgroundColor: Colors.cardSecondary,
-    borderRadius: BorderRadius.md,
-  },
-  modalCancelText: {
-    color: Colors.textSecondary,
-    fontWeight: 'bold',
-  },
-  modalConfirmBtn: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    backgroundColor: Colors.neonGreen,
-    borderRadius: BorderRadius.md,
-  },
-  modalConfirmText: {
-    color: Colors.textDark,
-    fontWeight: 'bold',
   },
 });

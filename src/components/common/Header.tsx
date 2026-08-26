@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
-import { Colors, Spacing } from '../../theme';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, Platform } from 'react-native';
+import { Colors, Spacing, BorderRadius } from '../../theme';
 import { ChevronLeft } from 'lucide-react-native';
 
 interface HeaderProps {
@@ -23,12 +23,12 @@ export const Header: React.FC<HeaderProps> = ({
       <View style={styles.leftRow}>
         {onBack && (
           <TouchableOpacity
-            style={styles.backButton}
+            style={styles.backGlassButton}
             onPress={onBack}
             activeOpacity={0.7}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <ChevronLeft color={Colors.neonGreen} size={28} />
+            <ChevronLeft color={Colors.neonGreen} size={24} />
           </TouchableOpacity>
         )}
         <View>
@@ -52,27 +52,29 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     backgroundColor: Colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.glassBorder,
   },
   leftRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  backButton: {
+  backGlassButton: {
     marginRight: Spacing.sm,
-    padding: Spacing.xs,
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.md,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: Colors.textPrimary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     color: Colors.neonGreen,
     marginTop: 2,
   },

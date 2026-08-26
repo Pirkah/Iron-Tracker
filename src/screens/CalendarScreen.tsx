@@ -27,6 +27,7 @@ import {
 } from 'lucide-react-native';
 import { AddExerciseModal } from '../components/modals/AddExerciseModal';
 import { ExerciseDetailScreen } from './ExerciseDetailScreen';
+import { GlassButton } from '../components/common/GlassButton';
 
 const DAYS_OF_WEEK = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 
@@ -41,17 +42,23 @@ export const CalendarScreen: React.FC = () => {
     saveSessionAsTemplate,
   } = useGym();
 
-  const [currentMonthDate, setCurrentMonthDate] = useState<Date>(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isCalendarExpanded, setIsCalendarExpanded] = useState<boolean>(true);
+  const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isCalendarExpanded, setIsCalendarExpanded] = useState(true);
 
-  const [showAddExoModal, setShowAddExoModal] = useState<boolean>(false);
-  const [isBisetAdd, setIsBisetAdd] = useState<boolean>(false);
-  const [showTemplatePicker, setShowTemplatePicker] = useState<boolean>(false);
-  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState<boolean>(false);
-  const [newTemplateName, setNewTemplateName] = useState<string>('');
-
+  // Detail view state
   const [selectedExoDetail, setSelectedExoDetail] = useState<WorkoutExercise | null>(null);
+
+  // Add exercise to selected date state
+  const [showAddExoModal, setShowAddExoModal] = useState(false);
+  const [isBisetAdd, setIsBisetAdd] = useState(false);
+
+  // Template picker state
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+
+  // Save template state
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
 
   // Month navigation
   const handlePrevMonth = () => {
@@ -124,7 +131,7 @@ export const CalendarScreen: React.FC = () => {
     setShowTemplatePicker(false);
   };
 
-  const handleAddExerciseToSelectedSession = (exo1: string, exo2?: string | null) => {
+  const handleAddExerciseToSession = (exo1: string, exo2?: string | null) => {
     if (!selectedSession) return;
     const updated = [...selectedSession.exercises];
 
@@ -198,16 +205,16 @@ export const CalendarScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Calendar Section */}
-      <View style={styles.calendarSection}>
+      {/* Calendar Glass Section */}
+      <View style={styles.calendarGlassSection}>
         {/* Month Navigation */}
         <View style={styles.monthHeader}>
-          <TouchableOpacity style={styles.monthNavBtn} onPress={handlePrevMonth}>
-            <ChevronLeft color={Colors.neonGreen} size={24} />
+          <TouchableOpacity style={styles.monthNavGlassBtn} onPress={handlePrevMonth}>
+            <ChevronLeft color={Colors.neonGreen} size={20} />
           </TouchableOpacity>
           <Text style={styles.monthTitleText}>{monthTitle.toUpperCase()}</Text>
-          <TouchableOpacity style={styles.monthNavBtn} onPress={handleNextMonth}>
-            <ChevronRight color={Colors.neonGreen} size={24} />
+          <TouchableOpacity style={styles.monthNavGlassBtn} onPress={handleNextMonth}>
+            <ChevronRight color={Colors.neonGreen} size={20} />
           </TouchableOpacity>
         </View>
 
@@ -291,18 +298,20 @@ export const CalendarScreen: React.FC = () => {
           </Text>
 
           {!selectedSession && (
-            <TouchableOpacity
-              style={styles.addSessionBtn}
+            <GlassButton
+              title="Ajouter"
+              variant="neon"
+              size="sm"
+              icon={<Plus color={Colors.neonGreen} size={14} />}
               onPress={() => setShowTemplatePicker(true)}
-            >
-              <Plus color={Colors.textDark} size={16} />
-              <Text style={styles.addSessionBtnText}>Ajouter</Text>
-            </TouchableOpacity>
+            />
           )}
         </View>
 
         {selectedSession && selectedSession.exercises.length > 0 ? (
-          <View style={styles.sessionCard}>
+          <View style={styles.sessionGlassCard}>
+            <View style={styles.glassReflectionTop} />
+
             {selectedSession.exercises.map((exo, i) => {
               const isBiset = !!exo.supersetId;
 
@@ -338,7 +347,7 @@ export const CalendarScreen: React.FC = () => {
                   setShowAddExoModal(true);
                 }}
               >
-                <Plus color={Colors.neonGreen} size={16} />
+                <Plus color={Colors.neonGreen} size={15} />
                 <Text style={styles.footerActionText}>Ajouter un exercice</Text>
               </TouchableOpacity>
 
@@ -346,32 +355,45 @@ export const CalendarScreen: React.FC = () => {
                 style={styles.saveAsTemplateActionBtn}
                 onPress={() => setShowSaveTemplateModal(true)}
               >
-                <BookmarkPlus color={Colors.textDark} size={16} style={{ marginRight: 6 }} />
+                <BookmarkPlus color={Colors.textPrimary} size={15} style={{ marginRight: 6 }} />
                 <Text style={styles.saveAsTemplateActionText}>Sauvegarder en programme</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.deleteSessionActionBtn}
-                onPress={handleDeleteSessionPrompt}
-              >
-                <Trash2 color={Colors.danger} size={15} style={{ marginRight: 6 }} />
-                <Text style={styles.deleteSessionActionText}>Supprimer la séance</Text>
               </TouchableOpacity>
             </View>
           </View>
-        ) : (
-          <View style={styles.restDayCard}>
-            <Dumbbell color={Colors.cardBorder} size={48} />
-            <Text style={styles.restDayTitle}>Jour de repos</Text>
-            <Text style={styles.restDaySub}>Aucun entraînement enregistré pour ce jour.</Text>
-            <TouchableOpacity
-              style={styles.startForDateBtn}
-              onPress={() => setShowTemplatePicker(true)}
-            >
-              <Plus color={Colors.neonGreen} size={16} />
-              <Text style={styles.startForDateBtnText}>Ajouter une séance à cette date</Text>
-            </TouchableOpacity>
+        ) : selectedSession && selectedSession.exercises.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>Séance vide pour ce jour.</Text>
+            <GlassButton
+              title="Ajouter un exercice"
+              variant="neon"
+              onPress={() => {
+                setIsBisetAdd(false);
+                setShowAddExoModal(true);
+              }}
+              style={{ marginTop: Spacing.md }}
+            />
           </View>
+        ) : (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>Aucun entraînement ce jour-là.</Text>
+            <GlassButton
+              title="Créer une séance rétroactive"
+              variant="glass"
+              onPress={() => setShowTemplatePicker(true)}
+              style={{ marginTop: Spacing.md }}
+            />
+          </View>
+        )}
+
+        {/* Delete session button if exists */}
+        {selectedSession && (
+          <TouchableOpacity
+            style={styles.deleteSessionGlassBtn}
+            onPress={handleDeleteSessionPrompt}
+          >
+            <Trash2 color={Colors.danger} size={16} style={{ marginRight: 6 }} />
+            <Text style={styles.deleteSessionText}>Supprimer cette séance</Text>
+          </TouchableOpacity>
         )}
       </ScrollView>
 
@@ -380,68 +402,76 @@ export const CalendarScreen: React.FC = () => {
         visible={showAddExoModal}
         isBiset={isBisetAdd}
         onClose={() => setShowAddExoModal(false)}
-        onSelect={handleAddExerciseToSelectedSession}
+        onSelect={handleAddExerciseToSession}
       />
 
-      {/* Template Picker Modal for Selected Date */}
+      {/* Template Picker Modal (When creating a retroactive session) */}
       <Modal visible={showTemplatePicker} transparent={true} animationType="fade">
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Choisir un programme</Text>
-            <ScrollView style={{ maxHeight: 280 }}>
-              {templateOrder.map(tName => (
+          <View style={styles.modalGlassCard}>
+            <View style={styles.glassReflectionTop} />
+            <Text style={styles.modalTitle}>Choisir une séance</Text>
+            <Text style={styles.modalSubTitle}>
+              Pour le {formatDateFr(selectedDate.toISOString())}
+            </Text>
+
+            <ScrollView style={{ maxHeight: 260, marginVertical: Spacing.md }}>
+              <TouchableOpacity
+                style={styles.templateOptionGlass}
+                onPress={() => handleStartSessionOnSelectedDate()}
+              >
+                <Dumbbell color={Colors.neonGreen} size={18} style={{ marginRight: 10 }} />
+                <Text style={styles.templateOptionText}>Séance Libre (Vide)</Text>
+              </TouchableOpacity>
+
+              {templateOrder.map(name => (
                 <TouchableOpacity
-                  key={tName}
-                  style={styles.templateOptionBtn}
-                  onPress={() => handleStartSessionOnSelectedDate(tName)}
+                  key={name}
+                  style={styles.templateOptionGlass}
+                  onPress={() => handleStartSessionOnSelectedDate(name)}
                 >
-                  <Text style={styles.templateOptionText}>{tName}</Text>
-                  <ChevronRight color={Colors.neonGreen} size={18} />
+                  <Play color={Colors.neonGreen} size={16} style={{ marginRight: 10 }} />
+                  <Text style={styles.templateOptionText}>{name}</Text>
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity
-                style={[styles.templateOptionBtn, { borderTopWidth: 1, borderTopColor: Colors.cardBorder }]}
-                onPress={() => handleStartSessionOnSelectedDate(undefined)}
-              >
-                <Text style={[styles.templateOptionText, { color: Colors.textSecondary }]}>
-                  Séance vide
-                </Text>
-                <Plus color={Colors.textSecondary} size={18} />
-              </TouchableOpacity>
             </ScrollView>
-            <TouchableOpacity
-              style={styles.modalCancelBtn}
+
+            <GlassButton
+              title="Annuler"
+              variant="glass"
               onPress={() => setShowTemplatePicker(false)}
-            >
-              <Text style={styles.modalCancelText}>Fermer</Text>
-            </TouchableOpacity>
+            />
           </View>
         </View>
       </Modal>
 
-      {/* Save as Template Modal */}
+      {/* Save Template Modal */}
       <Modal visible={showSaveTemplateModal} transparent={true} animationType="fade">
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+          <View style={styles.modalGlassCard}>
+            <View style={styles.glassReflectionTop} />
             <Text style={styles.modalTitle}>Sauvegarder en programme</Text>
             <TextInput
               style={styles.modalInput}
-              placeholder="Nom du programme (ex: Séance Dos / Bras)"
+              placeholder="Nom du nouveau programme"
               placeholderTextColor={Colors.textMuted}
               value={newTemplateName}
               onChangeText={setNewTemplateName}
               autoFocus={true}
             />
             <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
+              <GlassButton
+                title="Annuler"
+                variant="glass"
                 onPress={() => setShowSaveTemplateModal(false)}
-              >
-                <Text style={styles.modalCancelText}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleSaveAsTemplate}>
-                <Text style={styles.modalConfirmText}>Enregistrer</Text>
-              </TouchableOpacity>
+                style={{ flex: 1 }}
+              />
+              <GlassButton
+                title="Créer"
+                variant="neon"
+                onPress={handleSaveAsTemplate}
+                style={{ flex: 1 }}
+              />
             </View>
           </View>
         </View>
@@ -455,63 +485,73 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  calendarSection: {
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.cardBorder,
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
+  calendarGlassSection: {
+    backgroundColor: Colors.glassCard,
+    borderBottomWidth: 1.5,
+    borderBottomColor: Colors.glassBorder,
+    paddingTop: Spacing.sm,
   },
   monthHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
   },
-  monthNavBtn: {
-    padding: Spacing.xs,
+  monthNavGlassBtn: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
   },
   monthTitleText: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '900',
     color: Colors.textPrimary,
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   daysOfWeekRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.xs,
   },
   dayOfWeekText: {
+    flex: 1,
+    textAlign: 'center',
     fontSize: 11,
     fontWeight: 'bold',
     color: Colors.textMuted,
-    width: 40,
-    textAlign: 'center',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.xs,
   },
   dayCell: {
     width: '14.28%',
-    height: 44,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: BorderRadius.md,
   },
   dayCellSelected: {
     backgroundColor: Colors.neonGreen,
-    borderRadius: BorderRadius.full,
+    shadowColor: Colors.neonGreen,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
   },
   dayCellToday: {
     borderWidth: 1,
-    borderColor: Colors.neonGreen,
-    borderRadius: BorderRadius.full,
+    borderColor: Colors.neonGreenBorder,
   },
   dayNumberText: {
-    color: Colors.textPrimary,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
+    color: Colors.textPrimary,
   },
   dayNumberTextSelected: {
     color: Colors.textDark,
@@ -522,30 +562,31 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   sessionDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    position: 'absolute',
+    bottom: 4,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: Colors.neonGreen,
-    marginTop: 2,
   },
   sessionDotSelected: {
     backgroundColor: Colors.textDark,
   },
   drawerToggle: {
     alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    gap: 4,
+    paddingVertical: 6,
+    gap: 2,
   },
   drawerPill: {
     width: 36,
-    height: 4,
+    height: 3,
+    backgroundColor: Colors.glassBorder,
     borderRadius: 2,
-    backgroundColor: Colors.cardBorder,
   },
   sessionScroll: {
     padding: Spacing.lg,
     gap: Spacing.md,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
   sessionHeaderRow: {
     flexDirection: 'row',
@@ -553,31 +594,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sessionDateTitle: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: Colors.textPrimary,
-    letterSpacing: 0.5,
-  },
-  addSessionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.neonGreen,
-    paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: 5,
-    borderRadius: BorderRadius.md,
-    gap: 4,
-  },
-  addSessionBtnText: {
-    color: Colors.textDark,
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '900',
+    color: Colors.textSecondary,
+    letterSpacing: 1.2,
   },
-  sessionCard: {
-    backgroundColor: Colors.card,
+  sessionGlassCard: {
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    height: 1.5,
+    backgroundColor: Colors.glassBorderTop,
   },
   exoRow: {
     flexDirection: 'row',
@@ -602,14 +642,14 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   exoRowName: {
+    fontSize: 14,
+    fontWeight: '700',
     color: Colors.textPrimary,
-    fontSize: 15,
-    fontWeight: 'bold',
   },
   bisetTag: {
-    color: Colors.bisetPurple,
     fontSize: 9,
     fontWeight: 'bold',
+    color: Colors.bisetPurple,
     backgroundColor: Colors.bisetPurpleSoft,
     paddingHorizontal: 4,
     paddingVertical: 2,
@@ -621,88 +661,65 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   setsCountText: {
-    color: Colors.neonGreen,
     fontSize: 12,
-    fontWeight: 'bold',
+    color: Colors.textMuted,
+    marginRight: 4,
   },
   sessionCardFooter: {
-    padding: Spacing.md,
-    gap: Spacing.sm,
-    backgroundColor: Colors.surface,
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: Colors.cardBorder,
   },
   footerActionBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
     gap: Spacing.xs,
+    borderRightWidth: 1,
+    borderRightColor: Colors.cardBorder,
   },
   footerActionText: {
     color: Colors.neonGreen,
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  saveAsTemplateActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.neonGreen,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.md,
-    marginTop: Spacing.xs,
-  },
-  saveAsTemplateActionText: {
-    color: Colors.textDark,
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  deleteSessionActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.sm + 2,
-  },
-  deleteSessionActionText: {
-    color: Colors.danger,
     fontSize: 12,
     fontWeight: 'bold',
   },
-  restDayCard: {
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xxl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    marginTop: Spacing.md,
-  },
-  restDayTitle: {
-    color: Colors.textPrimary,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: Spacing.md,
-  },
-  restDaySub: {
-    color: Colors.textMuted,
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: Spacing.lg,
-  },
-  startForDateBtn: {
+  saveAsTemplateActionBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.neonGreenSoft,
-    paddingHorizontal: Spacing.lg,
+    justifyContent: 'center',
     paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
     gap: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.neonGreenBorder,
   },
-  startForDateBtnText: {
-    color: Colors.neonGreen,
+  saveAsTemplateActionText: {
+    color: Colors.textPrimary,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  emptyCard: {
+    backgroundColor: Colors.glassCard,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+  },
+  emptyText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deleteSessionGlassBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  deleteSessionText: {
+    color: Colors.danger,
     fontSize: 13,
     fontWeight: 'bold',
   },
@@ -713,19 +730,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.lg,
   },
-  modalCard: {
+  modalGlassCard: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
     color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  modalSubTitle: {
+    fontSize: 12,
+    color: Colors.neonGreen,
+    fontWeight: '600',
     marginBottom: Spacing.md,
   },
   modalInput: {
@@ -738,44 +761,23 @@ const styles = StyleSheet.create({
     borderColor: Colors.cardBorder,
     marginBottom: Spacing.lg,
   },
-  templateOptionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.cardBorder,
-  },
-  templateOptionText: {
-    color: Colors.textPrimary,
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
   modalActions: {
     flexDirection: 'row',
     gap: Spacing.md,
   },
-  modalCancelBtn: {
-    paddingVertical: Spacing.md,
+  templateOptionGlass: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.cardSecondary,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.md,
+    padding: Spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.xs,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
   },
-  modalCancelText: {
-    color: Colors.textSecondary,
-    fontWeight: 'bold',
-  },
-  modalConfirmBtn: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    backgroundColor: Colors.neonGreen,
-    borderRadius: BorderRadius.md,
-  },
-  modalConfirmText: {
-    color: Colors.textDark,
+  templateOptionText: {
+    color: Colors.textPrimary,
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });

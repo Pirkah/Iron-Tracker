@@ -33,6 +33,7 @@ import { AddExerciseModal } from '../components/modals/AddExerciseModal';
 import { ShareWorkoutCard } from '../components/share/ShareWorkoutCard';
 import { ExerciseDetailScreen } from './ExerciseDetailScreen';
 import { MachineSettingsModal } from '../components/modals/MachineSettingsModal';
+import { GlassButton } from '../components/common/GlassButton';
 
 export const TodayScreen: React.FC = () => {
   const {
@@ -57,10 +58,6 @@ export const TodayScreen: React.FC = () => {
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState<WorkoutExercise | null>(null);
-
-  // Rename Exercise modal
-  const [exerciseToRename, setExerciseToRename] = useState<WorkoutExercise | null>(null);
-  const [renameText, setRenameText] = useState('');
 
   // Machine Settings modal
   const [settingsExercise, setSettingsExercise] = useState<WorkoutExercise | null>(null);
@@ -215,24 +212,24 @@ export const TodayScreen: React.FC = () => {
           <Text style={styles.finishSub}>Super entraînement validé aujourd'hui.</Text>
 
           {/* Action: Share Story Card */}
-          <TouchableOpacity
-            style={styles.shareBtn}
+          <GlassButton
+            title="CRÉER UNE IMAGE DE PARTAGE"
+            variant="neon"
+            size="lg"
+            icon={<Share2 color={Colors.neonGreen} size={20} />}
             onPress={() => setShowShareModal(true)}
-            activeOpacity={0.8}
-          >
-            <Share2 color={Colors.textDark} size={22} style={{ marginRight: 8 }} />
-            <Text style={styles.shareBtnText}>CRÉER UNE IMAGE DE PARTAGE</Text>
-          </TouchableOpacity>
+            style={styles.fullWidthBtn}
+          />
 
           {/* Action: Save As Template */}
-          <TouchableOpacity
-            style={styles.saveTemplateBtn}
+          <GlassButton
+            title="SAUVEGARDER EN PROGRAMME"
+            variant="glass"
+            size="md"
+            icon={<BookmarkPlus color={Colors.textPrimary} size={18} />}
             onPress={() => setShowSaveTemplateModal(true)}
-            activeOpacity={0.8}
-          >
-            <BookmarkPlus color={Colors.textPrimary} size={20} style={{ marginRight: 8 }} />
-            <Text style={styles.saveTemplateBtnText}>SAUVEGARDER EN PROGRAMME</Text>
-          </TouchableOpacity>
+            style={styles.fullWidthBtn}
+          />
 
           {/* Action: Reopen Session */}
           <TouchableOpacity
@@ -240,7 +237,7 @@ export const TodayScreen: React.FC = () => {
             onPress={() => reopenSession(currentSession.id)}
             activeOpacity={0.8}
           >
-            <RotateCcw color={Colors.textSecondary} size={18} style={{ marginRight: 6 }} />
+            <RotateCcw color={Colors.textSecondary} size={16} style={{ marginRight: 6 }} />
             <Text style={styles.reopenBtnText}>Modifier / Rouvrir la séance</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -253,7 +250,8 @@ export const TodayScreen: React.FC = () => {
         {/* Save Template Modal */}
         <Modal visible={showSaveTemplateModal} transparent={true} animationType="fade">
           <View style={styles.modalBackdrop}>
-            <View style={styles.modalCard}>
+            <View style={styles.modalGlassCard}>
+              <View style={styles.glassReflectionTop} />
               <Text style={styles.modalCardTitle}>Sauvegarder en programme</Text>
               <TextInput
                 style={styles.modalInput}
@@ -264,15 +262,18 @@ export const TodayScreen: React.FC = () => {
                 autoFocus={true}
               />
               <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={styles.modalCancelBtn}
+                <GlassButton
+                  title="Annuler"
+                  variant="glass"
                   onPress={() => setShowSaveTemplateModal(false)}
-                >
-                  <Text style={styles.modalCancelText}>Annuler</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleSaveAsTemplate}>
-                  <Text style={styles.modalConfirmText}>Créer</Text>
-                </TouchableOpacity>
+                  style={{ flex: 1 }}
+                />
+                <GlassButton
+                  title="Créer"
+                  variant="neon"
+                  onPress={handleSaveAsTemplate}
+                  style={{ flex: 1 }}
+                />
               </View>
             </View>
           </View>
@@ -295,12 +296,15 @@ export const TodayScreen: React.FC = () => {
 
           <View style={styles.activeHeaderRight}>
             <TouchableOpacity
-              style={styles.reorderToggleBtn}
+              style={[
+                styles.reorderToggleGlassBtn,
+                isEditOrderMode && styles.reorderToggleGlassBtnActive,
+              ]}
               onPress={() => setIsEditOrderMode(!isEditOrderMode)}
             >
               <ArrowUpDown
                 color={isEditOrderMode ? Colors.neonGreen : Colors.textSecondary}
-                size={16}
+                size={14}
                 style={{ marginRight: 4 }}
               />
               <Text
@@ -313,8 +317,8 @@ export const TodayScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.resetBtn} onPress={handleResetSessionPrompt}>
-              <Trash2 color={Colors.danger} size={18} />
+            <TouchableOpacity style={styles.resetGlassBtn} onPress={handleResetSessionPrompt}>
+              <Trash2 color={Colors.danger} size={16} />
             </TouchableOpacity>
           </View>
         </View>
@@ -328,14 +332,17 @@ export const TodayScreen: React.FC = () => {
               <TouchableOpacity
                 key={exercise.id || index}
                 style={[
-                  styles.exerciseCard,
-                  isBiset && styles.bisetExerciseCard,
+                  styles.exerciseGlassCard,
+                  isBiset && styles.bisetExerciseGlassCard,
                 ]}
                 activeOpacity={0.8}
                 onPress={() => {
                   if (!isEditOrderMode) setSelectedExerciseForDetail(exercise);
                 }}
               >
+                {/* Glass top specular line */}
+                <View style={styles.glassReflectionTop} />
+
                 {/* Biset Purple Marker Strip */}
                 {isBiset && <View style={styles.bisetMarker} />}
 
@@ -383,14 +390,14 @@ export const TodayScreen: React.FC = () => {
                 {isEditOrderMode ? (
                   <View style={styles.reorderControls}>
                     <TouchableOpacity
-                      style={styles.reorderArrowBtn}
+                      style={styles.reorderArrowGlassBtn}
                       onPress={() => handleMoveExercise(index, 'up')}
                       disabled={index === 0}
                     >
-                      <ArrowUp color={index === 0 ? Colors.textMuted : Colors.textPrimary} size={18} />
+                      <ArrowUp color={index === 0 ? Colors.textMuted : Colors.textPrimary} size={16} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.reorderArrowBtn}
+                      style={styles.reorderArrowGlassBtn}
                       onPress={() => handleMoveExercise(index, 'down')}
                       disabled={index === currentSession.exercises.length - 1}
                     >
@@ -400,20 +407,20 @@ export const TodayScreen: React.FC = () => {
                             ? Colors.textMuted
                             : Colors.textPrimary
                         }
-                        size={18}
+                        size={16}
                       />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.deleteExoBtn}
+                      style={styles.deleteExoGlassBtn}
                       onPress={() => handleDeleteExercise(exercise.id)}
                     >
-                      <Trash2 color={Colors.danger} size={18} />
+                      <Trash2 color={Colors.danger} size={16} />
                     </TouchableOpacity>
                   </View>
                 ) : (
                   <View style={styles.exoCardRight}>
                     <TouchableOpacity
-                      style={styles.infoBtn}
+                      style={styles.infoGlassBtn}
                       onPress={() => setSettingsExercise(exercise)}
                     >
                       <Info
@@ -428,41 +435,40 @@ export const TodayScreen: React.FC = () => {
             );
           })}
 
-          {/* Add Exercise Buttons */}
+          {/* Liquid Glass Add Exercise Buttons */}
           <View style={styles.addButtonsRow}>
-            <TouchableOpacity
-              style={styles.addExoBtn}
+            <GlassButton
+              title="AJOUTER UN EXO"
+              variant="neon"
+              icon={<Plus color={Colors.neonGreen} size={16} />}
               onPress={() => {
                 setIsBisetAdd(false);
                 setShowAddModal(true);
               }}
-              activeOpacity={0.8}
-            >
-              <Plus color={Colors.textDark} size={18} />
-              <Text style={styles.addExoBtnText}>AJOUTER UN EXERCICE</Text>
-            </TouchableOpacity>
+              style={{ flex: 1 }}
+            />
 
-            <TouchableOpacity
-              style={styles.addBisetBtn}
+            <GlassButton
+              title="AJOUTER BISET"
+              variant="purple"
+              icon={<Layers color={Colors.bisetPurple} size={16} />}
               onPress={() => {
                 setIsBisetAdd(true);
                 setShowAddModal(true);
               }}
-              activeOpacity={0.8}
-            >
-              <Layers color={Colors.bisetPurple} size={18} />
-              <Text style={styles.addBisetBtnText}>AJOUTER UN BISET</Text>
-            </TouchableOpacity>
+              style={{ flex: 1 }}
+            />
           </View>
 
-          {/* Finish Button */}
-          <TouchableOpacity
-            style={styles.finishWorkoutBtn}
+          {/* Liquid Glass Finish Button */}
+          <GlassButton
+            title="TERMINER L'ENTRAÎNEMENT"
+            variant="glass"
+            size="lg"
             onPress={handleFinishPrompt}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.finishWorkoutBtnText}>TERMINER L'ENTRAÎNEMENT</Text>
-          </TouchableOpacity>
+            style={styles.finishWorkoutGlassBtn}
+            textStyle={{ color: Colors.neonGreen }}
+          />
         </ScrollView>
 
         {/* Add Exercise Modal */}
@@ -505,10 +511,11 @@ export const TodayScreen: React.FC = () => {
           return (
             <TouchableOpacity
               key={templateName}
-              style={styles.templateCard}
+              style={styles.templateGlassCard}
               activeOpacity={0.8}
               onPress={() => startSessionFromTemplate(templateName)}
             >
+              <View style={styles.glassReflectionTop} />
               <View style={styles.templateInfo}>
                 <Text style={styles.templateName}>{templateName.toUpperCase()}</Text>
                 <Text style={styles.templateExoCount}>
@@ -516,8 +523,8 @@ export const TodayScreen: React.FC = () => {
                 </Text>
               </View>
 
-              <View style={styles.playCircle}>
-                <Play color={Colors.textDark} fill={Colors.textDark} size={20} />
+              <View style={styles.playGlassCircle}>
+                <Play color={Colors.neonGreen} fill={Colors.neonGreen} size={18} />
               </View>
             </TouchableOpacity>
           );
@@ -525,15 +532,15 @@ export const TodayScreen: React.FC = () => {
 
         <View style={styles.divider} />
 
-        {/* Empty Workout Button */}
-        <TouchableOpacity
-          style={styles.emptySessionBtn}
+        {/* Empty Workout Glass Button */}
+        <GlassButton
+          title="SÉANCE LIBRE"
+          variant="glass"
+          size="lg"
+          icon={<Sparkles color={Colors.textSecondary} size={18} />}
           onPress={startEmptySession}
-          activeOpacity={0.8}
-        >
-          <Sparkles color={Colors.textSecondary} size={18} style={{ marginRight: 8 }} />
-          <Text style={styles.emptySessionBtnText}>SÉANCE LIBRE</Text>
-        </TouchableOpacity>
+          style={styles.emptySessionGlassBtn}
+        />
       </ScrollView>
     </View>
   );
@@ -547,7 +554,7 @@ const styles = StyleSheet.create({
   templatesContainer: {
     padding: Spacing.lg,
     gap: Spacing.md,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
   sectionHeaderTitle: {
     fontSize: 12,
@@ -557,15 +564,20 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
     marginBottom: Spacing.xs,
   },
-  templateCard: {
+  templateGlassCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   templateInfo: {
     flex: 1,
@@ -582,13 +594,15 @@ const styles = StyleSheet.create({
     color: Colors.neonGreen,
     marginTop: 4,
   },
-  playCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: Colors.neonGreen,
+  playGlassCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.glassNeon,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.glassNeonBorder,
     shadowColor: Colors.neonGreen,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -600,21 +614,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cardBorder,
     marginVertical: Spacing.md,
   },
-  emptySessionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.cardSecondary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  emptySessionBtnText: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 1,
+  emptySessionGlassBtn: {
+    width: '100%',
   },
   activeHeader: {
     flexDirection: 'row',
@@ -634,44 +635,65 @@ const styles = StyleSheet.create({
   activeHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: Spacing.sm,
   },
-  reorderToggleBtn: {
+  reorderToggleGlassBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.glassCard,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
+  },
+  reorderToggleGlassBtnActive: {
+    backgroundColor: Colors.glassNeon,
+    borderColor: Colors.glassNeonBorder,
   },
   reorderToggleText: {
     fontSize: 12,
     fontWeight: 'bold',
     color: Colors.textSecondary,
   },
-  resetBtn: {
-    padding: 6,
+  resetGlassBtn: {
+    padding: 7,
+    backgroundColor: Colors.glassRed,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.glassRedBorder,
   },
   exercisesList: {
     padding: Spacing.lg,
     gap: Spacing.sm + 2,
     paddingBottom: 110,
   },
-  exerciseCard: {
+  exerciseGlassCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  bisetExerciseCard: {
-    borderColor: Colors.bisetPurpleBorder,
-    backgroundColor: 'rgba(153, 77, 255, 0.04)',
+  bisetExerciseGlassCard: {
+    borderColor: Colors.glassPurpleBorder,
+    backgroundColor: 'rgba(153, 77, 255, 0.08)',
+  },
+  glassReflectionTop: {
+    position: 'absolute',
+    top: 0,
+    left: 10,
+    right: 10,
+    height: 1,
+    backgroundColor: Colors.glassBorderTop,
   },
   bisetMarker: {
     position: 'absolute',
@@ -682,11 +704,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bisetPurple,
   },
   statusCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 2,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.glassBorder,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.md,
@@ -743,21 +765,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  infoBtn: {
-    padding: Spacing.xs,
+  infoGlassBtn: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.sm,
   },
   reorderControls: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
   },
-  reorderArrowBtn: {
+  reorderArrowGlassBtn: {
     padding: 6,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
   },
-  deleteExoBtn: {
+  deleteExoGlassBtn: {
     padding: 6,
+    backgroundColor: Colors.glassRed,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.glassRedBorder,
     marginLeft: 4,
   },
   addButtonsRow: {
@@ -765,54 +795,9 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginTop: Spacing.md,
   },
-  addExoBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.neonGreen,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
-    gap: Spacing.xs,
-  },
-  addExoBtnText: {
-    color: Colors.textDark,
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  addBisetBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.bisetPurpleSoft,
-    borderWidth: 1,
-    borderColor: Colors.bisetPurpleBorder,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
-    gap: Spacing.xs,
-  },
-  addBisetBtnText: {
-    color: Colors.bisetPurple,
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  finishWorkoutBtn: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.neonGreenBorder,
+  finishWorkoutGlassBtn: {
     marginTop: Spacing.sm,
-  },
-  finishWorkoutBtnText: {
-    color: Colors.neonGreen,
-    fontSize: 14,
-    fontWeight: '900',
-    letterSpacing: 1,
+    borderColor: Colors.glassNeonBorder,
   },
   finishedContainer: {
     padding: Spacing.xl,
@@ -835,46 +820,14 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
   },
-  shareBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.neonGreen,
-    borderRadius: BorderRadius.xl,
-    paddingVertical: Spacing.lg,
+  fullWidthBtn: {
     width: '100%',
-    shadowColor: Colors.neonGreen,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  shareBtnText: {
-    color: Colors.textDark,
-    fontSize: 15,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  saveTemplateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.cardSecondary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md + 2,
-    width: '100%',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  saveTemplateBtnText: {
-    color: Colors.textPrimary,
-    fontSize: 13,
-    fontWeight: 'bold',
   },
   reopenBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: Spacing.md,
+    padding: Spacing.sm,
   },
   reopenBtnText: {
     color: Colors.textSecondary,
@@ -888,14 +841,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.lg,
   },
-  modalCard: {
+  modalGlassCard: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.glassCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: 1.5,
+    borderColor: Colors.glassBorder,
   },
   modalCardTitle: {
     fontSize: 16,
@@ -916,27 +869,5 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     gap: Spacing.md,
-  },
-  modalCancelBtn: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    backgroundColor: Colors.cardSecondary,
-    borderRadius: BorderRadius.md,
-  },
-  modalCancelText: {
-    color: Colors.textSecondary,
-    fontWeight: 'bold',
-  },
-  modalConfirmBtn: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    backgroundColor: Colors.neonGreen,
-    borderRadius: BorderRadius.md,
-  },
-  modalConfirmText: {
-    color: Colors.textDark,
-    fontWeight: 'bold',
   },
 });
