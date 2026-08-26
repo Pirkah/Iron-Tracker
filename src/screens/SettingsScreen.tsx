@@ -10,9 +10,9 @@ import {
   TextInput,
   Share,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius } from '../../theme';
-import { useGym } from '../../context/GymContext';
-import { StorageService } from '../../services/storage';
+import { Colors, Spacing, BorderRadius } from '../theme';
+import { useGym } from '../context/GymContext';
+import { StorageService } from '../services/storage';
 import {
   Download,
   Upload,

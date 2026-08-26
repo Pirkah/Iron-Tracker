@@ -9,9 +9,9 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius } from '../../theme';
-import { useGym } from '../../context/GymContext';
-import { TemplateItem } from '../../types/gym';
+import { Colors, Spacing, BorderRadius } from '../theme';
+import { useGym } from '../context/GymContext';
+import { TemplateItem } from '../types/gym';
 import {
   Plus,
   Trash2,
@@ -23,7 +23,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from 'lucide-react-native';
-import { AddExerciseModal } from '../../components/modals/AddExerciseModal';
+import { AddExerciseModal } from '../components/modals/AddExerciseModal';
 
 export const ProgramsScreen: React.FC = () => {
   const {

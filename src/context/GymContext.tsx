@@ -595,7 +595,7 @@ export const GymProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           for (const set of exo.sets) {
             const w = Math.abs(set.weight || 0);
             const r = (set.reps || 0) + (set.repsRight || 0);
-            volume += w * (set.isUnilateral ? r / 2 : r);
+            volume += w * (exo.isUnilateral ? r / 2 : r);
             for (const drop of set.drops) {
               const dw = Math.abs(drop.weight || 0);
               const dr = (drop.reps || 0) + (drop.repsRight || 0);

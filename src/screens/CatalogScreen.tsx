@@ -9,8 +9,8 @@ import {
   Modal,
   Alert,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius } from '../../theme';
-import { useGym } from '../../context/GymContext';
+import { Colors, Spacing, BorderRadius } from '../theme';
+import { useGym } from '../context/GymContext';
 import {
   Search,
   FolderPlus,

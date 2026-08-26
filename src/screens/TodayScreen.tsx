@@ -9,9 +9,9 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius } from '../../theme';
-import { useGym } from '../../context/GymContext';
-import { WorkoutSession, WorkoutExercise, ExerciseStatus, isExerciseCardio } from '../../types/gym';
+import { Colors, Spacing, BorderRadius } from '../theme';
+import { useGym } from '../context/GymContext';
+import { WorkoutSession, WorkoutExercise, ExerciseStatus, isExerciseCardio } from '../types/gym';
 import {
   Play,
   CheckCircle2,
@@ -29,10 +29,10 @@ import {
   Layers,
   Sparkles,
 } from 'lucide-react-native';
-import { AddExerciseModal } from '../../components/modals/AddExerciseModal';
-import { ShareWorkoutCard } from '../../components/share/ShareWorkoutCard';
+import { AddExerciseModal } from '../components/modals/AddExerciseModal';
+import { ShareWorkoutCard } from '../components/share/ShareWorkoutCard';
 import { ExerciseDetailScreen } from './ExerciseDetailScreen';
-import { MachineSettingsModal } from '../../components/modals/MachineSettingsModal';
+import { MachineSettingsModal } from '../components/modals/MachineSettingsModal';
 
 export const TodayScreen: React.FC = () => {
   const {

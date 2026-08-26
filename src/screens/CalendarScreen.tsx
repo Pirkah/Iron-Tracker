@@ -9,10 +9,10 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius } from '../../theme';
-import { useGym } from '../../context/GymContext';
-import { WorkoutSession, WorkoutExercise } from '../../types/gym';
-import { formatDateFr, isSameDay } from '../../utils/calculations';
+import { Colors, Spacing, BorderRadius } from '../theme';
+import { useGym } from '../context/GymContext';
+import { WorkoutSession, WorkoutExercise } from '../types/gym';
+import { formatDateFr, isSameDay } from '../utils/calculations';
 import {
   ChevronLeft,
   ChevronRight,
@@ -25,7 +25,7 @@ import {
   Play,
   Layers,
 } from 'lucide-react-native';
-import { AddExerciseModal } from '../../components/modals/AddExerciseModal';
+import { AddExerciseModal } from '../components/modals/AddExerciseModal';
 import { ExerciseDetailScreen } from './ExerciseDetailScreen';
 
 const DAYS_OF_WEEK = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];

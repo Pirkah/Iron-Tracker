@@ -9,10 +9,10 @@ import {
   Switch,
   Alert,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius } from '../../theme';
-import { WorkoutExercise, GymSet, GymDrop, isExerciseCardio } from '../../types/gym';
-import { useGym } from '../../context/GymContext';
-import { formatLastPerformanceSet, triggerHaptic } from '../../utils/calculations';
+import { Colors, Spacing, BorderRadius } from '../theme';
+import { WorkoutExercise, GymSet, GymDrop, isExerciseCardio } from '../types/gym';
+import { useGym } from '../context/GymContext';
+import { formatLastPerformanceSet, triggerHaptic } from '../utils/calculations';
 import {
   Zap,
   CornerDownRight,
@@ -23,7 +23,7 @@ import {
   Info,
   ChevronLeft,
 } from 'lucide-react-native';
-import { MachineSettingsModal } from '../../components/modals/MachineSettingsModal';
+import { MachineSettingsModal } from '../components/modals/MachineSettingsModal';
 
 interface ExerciseDetailScreenProps {
   exercise: WorkoutExercise;
@@ -329,7 +329,10 @@ export const ExerciseDetailScreen: React.FC<ExerciseDetailScreenProps> = ({
                         {/* Weight (Kg) */}
                         <View style={styles.inputWrap}>
                           <TextInput
-                            style={[styles.smartInput, set.weight && set.weight < 0 && { color: Colors.danger }]}
+                            style={[
+                              styles.smartInput,
+                              (set.weight ?? 0) < 0 ? { color: Colors.danger } : null,
+                            ]}
                             keyboardType="numeric"
                             placeholder="Kg"
                             placeholderTextColor={Colors.textMuted}

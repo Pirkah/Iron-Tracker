@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius } from '../../theme';
-import { useGym } from '../../context/GymContext';
-import { calculate1RM, formatDateFr } from '../../utils/calculations';
+import { Colors, Spacing, BorderRadius } from '../theme';
+import { useGym } from '../context/GymContext';
+import { calculate1RM, formatDateFr } from '../utils/calculations';
 import { ChevronLeft, Trophy, TrendingUp, Calendar, Zap } from 'lucide-react-native';
 import Svg, { Line, Circle as SvgCircle, Polyline, Text as SvgText } from 'react-native-svg';
 
